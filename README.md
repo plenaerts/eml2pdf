@@ -20,9 +20,7 @@ This tool allows you to convert email files (`.eml` format) into PDF documents, 
 
 - Python 3.6+
 - `email` (built-in Python library)
-- `fpdf2` - PDF generation
-- `beautifulsoup4` - HTML parsing
-- `chardet` - Character encoding detection
+- `pdfkit` - HTML to PDF conversion
 
 Install dependencies using:
 

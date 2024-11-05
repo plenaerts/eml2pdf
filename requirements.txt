@@ -1,4 +1,1 @@
 pdfkit>=1.0.0
-beautifulsoup4>=4.9.3
-chardet>=4.0.0
-fpdf2>=2.7.0
