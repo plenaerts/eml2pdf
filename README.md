@@ -2,7 +2,14 @@
 
 Convert `.eml` (email) files to PDF using Python.
 
-The converted PDF files will be saved in the same location as the input files with the same name but `.pdf` extension.
+The converted PDF files will be saved in the specified output directory. The output filenames are formatted as:
+`YYYY-MM-DD_original_filename.pdf`, where:
+
+- The date prefix is taken from the email's sent date
+- Spaces in the original filename are converted to underscores
+- The extension is changed to `.pdf`
+
+For example, `My Email.eml` sent on March 15, 2024 will become `2024-03-15_My_Email.pdf`.
 
 ## Features
 
@@ -33,6 +40,15 @@ pip install -r requirements.txt
 ```
 python eml-to-pdf.py <input_dir> <output_dir>
 ```
+
+For example:
+
+```
+python eml-to-pdf.py ./emails ./pdfs
+```
+
+Input file: `Meeting Notes.eml` (sent 2024-03-20)
+Output file: `2024-03-20_Meeting_Notes.pdf`
 
 ## License
 
