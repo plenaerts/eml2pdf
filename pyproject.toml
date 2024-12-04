@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools", "setuptools_scm[toml]"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eml-to-pdf"
+description = "Convert .eml (email) files to PDF using Python."
+keywords = ["eml", "pdf", "html", "mime", "multipart"]
+license = { text = "MIT License" }
+urls = { repository = "https://github.com/klokie/eml-to-pdf" }
+authors = [
+    {name = "Daniel Grossfeld", email = "github@klokie.com"}
+]
+dependencies = [
+    "pdfkit~=1.0.0"
+]
+dynamic = ["version", "readme"]
+
+[tool.setuptools.dynamic]
+readme = {file = ["README.md"]}
+
+[project.scripts]
+eml_to_pdf = "eml_to_pdf.eml_to_pdf:main"
+
+[tool.setuptools]
+packages = ["eml_to_pdf"]
+include-package-data = false
+
+[tool.setuptools_scm]
