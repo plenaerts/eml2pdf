@@ -12,7 +12,7 @@ authors = [
     {name = "Daniel Grossfeld", email = "github@klokie.com"}
 ]
 dependencies = [
-    "pdfkit~=1.0.0"
+    "weasyprint~=63.0"
 ]
 dynamic = ["version", "readme"]
 

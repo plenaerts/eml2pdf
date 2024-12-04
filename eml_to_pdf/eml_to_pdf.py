@@ -1,10 +1,11 @@
 import os
 import email
-import pdfkit
 import email.utils
 import email.header
 import re
 import argparse
+
+from weasyprint import HTML
 
 options = {"quiet": True, "load-error-handling": "skip", "encoding": "UTF-8"}
 
@@ -116,15 +117,19 @@ subject: {subject}
 
             # Convert to PDF
             try:
-                pdfkit.from_string(html_content, output_path, options=options)
+                html = HTML(string=html_content)
+                html.write_pdf(output_path)
+#                pdfkit.from_string(html_content, output_path, options=options)
                 print(f"Converted {filename} to PDF successfully.")
             except OSError as e:
                 print(f"Failed to convert {filename}: {str(e)}")
                 # Optionally, try again with images disabled
                 try:
+                    # TODO: this is not going to work, since weasyprint has
+                    # different options...
                     options["load-error-handling"] = "ignore"
                     options["no-images"] = True
-                    pdfkit.from_string(html_content, output_path, options=options)
+                    # pdfkit.from_string(html_content, output_path, options=options)
                     print(f"Converted {filename} to PDF successfully (without images).")
                 except Exception as e2:
                     print(f"Second attempt failed for {filename}: {str(e2)}")
