@@ -2,12 +2,31 @@ import os
 import email
 import email.utils
 import email.header
+from html import escape
 import re
 import argparse
 
 from weasyprint import HTML
 
 options = {"quiet": True, "load-error-handling": "skip", "encoding": "UTF-8"}
+
+
+def header_to_html(header_str: str) -> str:
+    """Return decoded, concatenated eml header, html encoded."""
+    headers = email.header.decode_header(header_str)
+    headers_as_string = ""
+    # decoded headers can have multiple parts. Concat them.
+    for head in headers:
+        # If a header is ascii encoded then head[1] is None
+        if head[1] is None:
+            enc = 'ascii'
+        else:
+            # If head[1] is not None it should be a string with the encoding.
+            # head[0] will be bytes.
+            enc = head[1]
+        headers_as_string += str(head[0], enc)
+    # eml headers can contain &, <, >
+    return escape(headers_as_string)
 
 
 def main():
@@ -36,23 +55,23 @@ def main():
         html_content = None
 
         # Format email header
-        from_addr = msg.get("from", "No sender")
+        # Decode from if it's encoded
+        try:
+            from_addr = header_to_str(msg.get("from", "No sender"))
+            print(f'from: {from_addr}')
+        except UnicodeError as e:
+            print(f"Failed to decode from address for {filename}: {str(e)}")
+
         to_addr = msg.get("to", "No recipient")
         date = email.utils.parsedate_to_datetime(msg.get("date", ""))
-        formatted_date = date.strftime("%Y-%m-%d, %H:%M") if date else "No date"
+        formatted_date = date.strftime("%Y-%m-%d, %H:%M") \
+            if date else "No date"
 
         # Decode subject if it's encoded
-        subject = msg.get("subject", "No subject")
-        if subject:
-            try:
-                decoded_subject = email.header.decode_header(subject)[0]
-                subject = (
-                    decoded_subject[0].decode("utf-8")
-                    if isinstance(decoded_subject[0], bytes)
-                    else decoded_subject[0]
-                )
-            except Exception as e:
-                print(f"Failed to decode subject for {filename}: {str(e)}")
+        try:
+            subject = header_to_str(msg.get("subject", "No subject"))
+        except UnicodeError as e:
+            print(f"Failed to decode subject for {filename}: {str(e)}")
 
         email_header = f"""
         <pre style="font-family: monospace; margin-bottom: 20px;">
@@ -69,7 +88,8 @@ subject: {subject}
                 payload = part.get_payload(decode=True)
                 # Try multiple encodings if UTF-8 fails
                 if isinstance(payload, bytes):
-                    for encoding in ["utf-8", "latin1", "iso-8859-1", "cp1252"]:
+                    for encoding in ["utf-8", "latin1",
+                                     "iso-8859-1", "cp1252"]:
                         try:
                             html_content = payload.decode(encoding)
                             break
@@ -77,7 +97,8 @@ subject: {subject}
                             continue
                     else:  # If no encoding worked
                         print(
-                            f"Failed to decode {filename} with common encodings. Skipping..."
+                            f"Failed to decode {filename} with common "
+                            "encodings. Skipping..."
                         )
                         continue
                 else:
@@ -99,7 +120,8 @@ subject: {subject}
             file_date = date.strftime("%Y-%m-%d") if date else "nodate"
 
             # Create sanitized subject for filename
-            safe_subject = re.sub(r'[<>:"/\\|?*]', "", subject)  # Remove illegal chars
+            safe_subject = re.sub(r'[<>:"/\\|?*]', "",
+                                  subject)  # Remove illegal chars
             safe_subject = safe_subject.replace(
                 " ", "_"
             )  # Replace spaces with underscores
@@ -129,8 +151,10 @@ subject: {subject}
                     # different options...
                     options["load-error-handling"] = "ignore"
                     options["no-images"] = True
-                    # pdfkit.from_string(html_content, output_path, options=options)
-                    print(f"Converted {filename} to PDF successfully (without images).")
+                    # pdfkit.from_string(html_content, output_path,
+                    #                    options=options)
+                    print(f"Converted {filename} to PDF successfully "
+                          "(without images).")
                 except Exception as e2:
                     print(f"Second attempt failed for {filename}: {str(e2)}")
                     continue
