@@ -6,8 +6,10 @@ from html import escape
 import re
 import argparse
 import datetime
+from pathlib import Path
+import sys
 
-from weasyprint import HTML
+from weasyprint import HTML  # type: ignore
 
 options = {"quiet": True, "load-error-handling": "skip", "encoding": "UTF-8"}
 
@@ -20,16 +22,13 @@ class Header:
     html = "Not decoded."
     date = None
 
-    def __init__(self, msg: email.message, eml_path: os.path):
+    def __init__(self, msg: email.message.Message, eml_path: Path):
         # Format email header
         # Decode headers if encoded
         try:
-            self.from_addr = header_to_html(msg.get("from",
-                                                    (b"No sender", None)))
-            self.to_addr = header_to_html(msg.get("to",
-                                                  (b"No recipient", None)))
-            self.subject = header_to_html(msg.get("subject",
-                                                  (b"No subject", None)))
+            self.from_addr = header_to_html(msg.get("from", "No sender"))
+            self.to_addr = header_to_html(msg.get("to", "No recipient"))
+            self.subject = header_to_html(msg.get("subject", "No subject"))
         except UnicodeError as e:
             print(f"Failed to decode header field for {eml_path}: {str(e)}")
 
@@ -48,7 +47,7 @@ class Header:
         """
 
 
-def header_to_html(header_str: tuple) -> str:
+def header_to_html(header_str: str) -> str:
     """Return decoded, concatenated eml header, html encoded."""
     headers = email.header.decode_header(header_str)
     headers_as_string = ""
@@ -70,19 +69,21 @@ def header_to_html(header_str: tuple) -> str:
     return escape(headers_as_string)
 
 
-def html_from_eml(msg: email.message, eml_path: os.path) -> str:
-    # Extract HTML content from the email
-    html_content = None
+def html_from_eml(msg: email.message.Message, eml_path: Path) -> str:
+    """Extract HTML content from mail"""
+    html_content = ""
 
     for part in msg.walk():
         if part.get_content_type() == "text/html":
             payload = part.get_payload(decode=True)
             # Try multiple encodings if UTF-8 fails
-            # TODO: check if this is the best approach. eml format may
-            # include the encoding to use for payload, like the headers do.
             if isinstance(payload, bytes):
-                for encoding in ["utf-8", "latin1",
-                                 "iso-8859-1", "cp1252"]:
+                # encs is a set of common western encodings.
+                # Add systems default as another option.
+                # TODO: add an argument for additional encodings.
+                encs = {"utf-8", "latin1", "iso-8859-1", "cp1252"}
+                encs.add(sys.getdefaultencoding())
+                for encoding in encs:
                     try:
                         html_content = payload.decode(encoding)
                         break
@@ -90,18 +91,20 @@ def html_from_eml(msg: email.message, eml_path: os.path) -> str:
                         continue
                 else:  # If no encoding worked
                     print(
-                        f"Failed to decode {filename} with common "
+                        f"Failed to decode {eml_path} with common "
                         "encodings. Skipping..."
                     )
                     continue
             else:
-                html_content = payload
+                # This should never happen if decode=True above.
+                html_content = str(payload)
             break
     return html_content
 
 
 def get_output_path(date: datetime.datetime,
                     subject: str, output_dir: str) -> str:
+    """Return a filename from date, subject and output_dir content"""
     # Format date for filename prefix
     file_date = date.strftime("%Y-%m-%d") if date else "nodate"
 
@@ -125,7 +128,7 @@ def get_output_path(date: datetime.datetime,
 
 
 def generate_pdf(html_content: str, output_path: str, filename: str):
-    # Convert to PDF
+    """Convert HTML to PDF"""
     try:
         html = HTML(string=html_content)
         html.write_pdf(output_path)
@@ -142,7 +145,7 @@ def generate_pdf(html_content: str, output_path: str, filename: str):
             # pdfkit.from_string(html_content, output_path,
             #                    options=options)
             print(f"Converted {filename} to PDF successfully "
-                    "(without images).")
+                  "(without images).")
         except Exception as e2:
             print(f"Second attempt failed for {filename}: {str(e2)}")
 
