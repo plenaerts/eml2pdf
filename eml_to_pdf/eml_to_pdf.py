@@ -8,6 +8,7 @@ import argparse
 import datetime
 from pathlib import Path
 import sys
+import base64
 
 from weasyprint import HTML  # type: ignore
 
@@ -72,9 +73,12 @@ def header_to_html(header_str: str) -> str:
 def html_from_eml(msg: email.message.Message, eml_path: Path) -> str:
     """Extract HTML content from mail"""
     html_content = ""
+    attachments = {}
 
     for part in msg.walk():
-        if part.get_content_type() == "text/html":
+        content_disposition = part.get_content_disposition()
+        content_type = part.get_content_type()
+        if content_type == "text/html" and not content_disposition:
             payload = part.get_payload(decode=True)
             # Try multiple encodings if UTF-8 fails
             if isinstance(payload, bytes):
@@ -98,7 +102,31 @@ def html_from_eml(msg: email.message.Message, eml_path: Path) -> str:
             else:
                 # This should never happen if decode=True above.
                 html_content = str(payload)
-            break
+        elif (content_disposition == 'attachment' or \
+                            content_disposition == 'inline') and \
+                            content_type.startswith('image/'):
+            filename = part.get_filename()
+            cid = part.get('Content-ID')
+            content = part.get_payload(decode=True)
+
+            # Store attachments by CID or filename
+            if cid:
+                cid = cid.strip('<>')
+                attachments[cid] = {
+                    'filename': filename,
+                    'content': content,
+                    'content_type': content_type
+                }
+
+    # Embed images in HTML
+    if html_content:
+        for cid, attachment in attachments.items():
+            content_type = attachment['content_type']
+            content = base64.b64encode(attachment['content']).decode('utf-8')
+            data_uri = f"data:{content_type};base64,{content}"
+
+            # Replace CID references in HTML
+            html_content = html_content.replace(f"cid:{cid}", data_uri)
     return html_content
 
 
