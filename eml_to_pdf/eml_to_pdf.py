@@ -7,10 +7,9 @@ import re
 import argparse
 import datetime
 from pathlib import Path
-import sys
 import base64
 
-from weasyprint import HTML  # type: ignore
+from weasyprint import HTML, CSS  # type: ignore
 
 options = {"quiet": True, "load-error-handling": "skip", "encoding": "UTF-8"}
 
@@ -70,6 +69,19 @@ def header_to_html(header_str: str) -> str:
     return escape(headers_as_string)
 
 
+def embed_imgs(html_content: str, attachments: dict) -> str:
+    """Return embedded images from attachments in html content"""
+    if html_content:
+        for cid, attachment in attachments.items():
+            content_type = attachment['content_type']
+            content = base64.b64encode(attachment['content']).decode('utf-8')
+            data_uri = f"data:{content_type};base64,{content}"
+
+            # Replace CID references in HTML
+            html_content = html_content.replace(f"cid:{cid}", data_uri)
+    return html_content
+
+
 def html_from_eml(msg: email.message.Message, eml_path: Path) -> str:
     """Extract HTML content from mail"""
     html_content = ""
@@ -78,31 +90,15 @@ def html_from_eml(msg: email.message.Message, eml_path: Path) -> str:
     for part in msg.walk():
         content_disposition = part.get_content_disposition()
         content_type = part.get_content_type()
+        content_charset = part.get_content_charset() or 'utf-8'
         if content_type == "text/html" and not content_disposition:
             payload = part.get_payload(decode=True)
-            # Try multiple encodings if UTF-8 fails
             if isinstance(payload, bytes):
-                # encs is a set of common western encodings.
-                # Add systems default as another option.
-                # TODO: add an argument for additional encodings.
-                encs = {"utf-8", "latin1", "iso-8859-1", "cp1252"}
-                encs.add(sys.getdefaultencoding())
-                for encoding in encs:
-                    try:
-                        html_content = payload.decode(encoding)
-                        break
-                    except UnicodeDecodeError:
-                        continue
-                else:  # If no encoding worked
-                    print(
-                        f"Failed to decode {eml_path} with common "
-                        "encodings. Skipping..."
-                    )
-                    continue
+                html_content = payload.decode(content_charset)
             else:
-                # This should never happen if decode=True above.
-                html_content = str(payload)
-        elif (content_disposition == 'attachment' or \
+                print(f"{eml_path} not decoded correctly.")
+                html_content = 'Encoding error!'
+        elif (content_disposition == 'attachment' or
                             content_disposition == 'inline') and \
                             content_type.startswith('image/'):
             filename = part.get_filename()
@@ -117,16 +113,7 @@ def html_from_eml(msg: email.message.Message, eml_path: Path) -> str:
                     'content': content,
                     'content_type': content_type
                 }
-
-    # Embed images in HTML
-    if html_content:
-        for cid, attachment in attachments.items():
-            content_type = attachment['content_type']
-            content = base64.b64encode(attachment['content']).decode('utf-8')
-            data_uri = f"data:{content_type};base64,{content}"
-
-            # Replace CID references in HTML
-            html_content = html_content.replace(f"cid:{cid}", data_uri)
+    html_content = embed_imgs(html_content, attachments)
     return html_content
 
 
@@ -155,12 +142,18 @@ def get_output_path(date: datetime.datetime,
     return output_path
 
 
-def generate_pdf(html_content: str, output_path: str, filename: str):
+def generate_pdf(html_content: str, output_path: str, filename: str,
+                 debug_html: bool = False, page: str = 'a4'):
     """Convert HTML to PDF"""
     try:
+        if debug_html:
+            of = open(output_path + '.html', 'w')
+            of.write(html_content)
+            of.close()
         html = HTML(string=html_content)
-        html.write_pdf(output_path)
-#                pdfkit.from_string(html_content, output_path, options=options)
+        css = CSS(string=f'@page {{ size: {page}; margin: 1cm }}')
+        html.write_pdf(output_path, presentational_hints=True,
+                       stylesheets=[css])
         print(f"Converted {filename} to PDF successfully.")
     except OSError as e:
         print(f"Failed to convert {filename}: {str(e)}")
@@ -183,6 +176,12 @@ def main():
     parser = argparse.ArgumentParser(description="Convert EML files to PDF")
     parser.add_argument("input_dir", help="Directory containing EML files")
     parser.add_argument("output_dir", help="Directory for PDF output")
+    parser.add_argument("-d", "--debug_html", action="store_true",
+                        help="Write intermediate html file next to pdf's")
+    parser.add_argument("-p", "--page", metavar="size", default='a4',
+                        help="a3 a4 a5 b4 b5 letter legal or ledger with "
+                        "or without 'landscape', for example: 'a4 landscape' "
+                        "or 'a3' including quotes. Defaults to 'a4'.")
     args = parser.parse_args()
 
     # Create output directory if it doesn't exist
@@ -217,7 +216,8 @@ def main():
             output_path = get_output_path(email_header.date,
                                           email_header.subject,
                                           args.output_dir)
-            generate_pdf(html_content, output_path, filename)
+            generate_pdf(html_content, output_path, filename,
+                         debug_html=args.debug_html, page=args.page)
         else:
             print(f"No HTML content found in {filename}. Skipping...")
 
