@@ -30,12 +30,14 @@ client.
 
 ## Dependencies
 
-- Python 3.6+
+- Python 3.9+
 - [weasyprint](https://weasyprint.org/) - a visual rendering engine for HTML
 and CSS that can export to PDF.
   - based on various libraries but NOT on a full rendering engine like WebKit
   or Gecko. [python-pdfkit and wkhtmltopdf are deprecated libraries](
   https://github.com/JazzCore/python-pdfkit?tab=readme-ov-file#deprecation-warning)
+- [python-markdown](https://github.com/Python-Markdown/markdown) - for
+  HTML'izing plain text.
 
 ## Installation
 
@@ -47,7 +49,7 @@ pip install .
 
 ## Usage
 
-```bash
+```text
 usage: eml_to_pdf [-h] [-d] [-p size] input_dir output_dir
 
 Convert EML files to PDF

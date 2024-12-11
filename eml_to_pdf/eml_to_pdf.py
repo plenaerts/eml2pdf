@@ -1,4 +1,3 @@
-import os
 import email
 import email.utils
 import email.header
@@ -10,6 +9,7 @@ from pathlib import Path
 import base64
 import sys
 
+from markdown import markdown
 from weasyprint import HTML, CSS  # type: ignore
 
 
@@ -37,6 +37,7 @@ class Header:
     to_addr = "Not decoded."
     subject = "Not decoded."
     html = "Not decoded."
+    formatted_date = "No date."
     date = None
 
     def __init__(self, msg: email.message.Message, eml_path: Path):
@@ -50,7 +51,9 @@ class Header:
         except UnicodeError as e:
             print(f"Failed to decode header field for {eml_path}: {str(e)}")
 
-        self.date = email.utils.parsedate_to_datetime(msg.get("date", ""))
+        msg_date = msg.get("date", "")
+        self.date = email.utils.parsedate_to_datetime(msg.get("date", "")) \
+            if msg_date else None
         self.formatted_date = self.date.strftime("%Y-%m-%d, %H:%M") \
             if self.date else "No date"
 
@@ -103,13 +106,19 @@ def embed_imgs(html_content: str, attachments: dict) -> str:
 def html_from_eml(msg: email.message.Message, eml_path: Path) -> str:
     """Extract HTML content from mail"""
     html_content = ""
+    plain_text_content = ""
+    decodec_html = ""
     attachments = {}
 
     for part in msg.walk():
         content_disposition = part.get_content_disposition()
         content_type = part.get_content_type()
         content_charset = part.get_content_charset() or 'utf-8'
-        if content_type == "text/html" and not content_disposition:
+        if content_type == 'text/plain' and not content_disposition:
+            bytes_content = part.get_payload(decode=True)
+            if isinstance(bytes_content, bytes):
+                plain_text_content += bytes_content.decode(content_charset)
+        elif content_type == "text/html" and not content_disposition:
             payload = part.get_payload(decode=True)
             if isinstance(payload, bytes):
                 html_content = payload.decode(content_charset)
@@ -132,12 +141,15 @@ def html_from_eml(msg: email.message.Message, eml_path: Path) -> str:
                     'content': content,
                     'content_type': content_type
                 }
-    html_content = embed_imgs(html_content, attachments)
-    return html_content
+
+    html_content = embed_imgs(html_content, attachments) \
+        if html_content else markdown(plain_text_content)
+    decoded_html = html_content.encode('utf-8').decode('unicode_escape')
+    return decoded_html
 
 
 def get_output_path(date: datetime.datetime,
-                    subject: str, output_dir: str) -> str:
+                    subject: str, output_dir: str) -> Path:
     """Return a filename from date, subject and output_dir content"""
     # Format date for filename prefix
     file_date = date.strftime("%Y-%m-%d") if date else "nodate"
@@ -150,13 +162,13 @@ def get_output_path(date: datetime.datetime,
 
     # Create base output filename
     base_filename = f"{file_date}-{safe_subject}.pdf"
-    output_path = os.path.join(output_dir, base_filename)
+    output_path = output_dir / Path(base_filename)
 
     # Add number suffix if file exists
     counter = 1
-    while os.path.exists(output_path):
+    while output_path.exists():
         base_filename = f"{file_date}-{safe_subject}_{counter}.pdf"
-        output_path = os.path.join(output_dir, base_filename)
+        output_path = output_dir / Path(base_filename)
         counter += 1
     return output_path
 

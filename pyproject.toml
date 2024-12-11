@@ -13,6 +13,7 @@ authors = [
 ]
 dependencies = [
     "weasyprint~=63.0"
+    "markdown~=3.7"
 ]
 dynamic = ["version", "readme"]
 
