@@ -39,7 +39,7 @@ and CSS that can export to PDF.
 
 ## Installation
 
-Use pip to install this package from pyproject.toml:
+Clone or download this repo and use pip to install this package:
 
 ```bash
 pip install .
