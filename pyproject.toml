@@ -9,11 +9,11 @@ keywords = ["eml", "pdf", "html", "mime", "multipart"]
 license = { text = "MIT License" }
 urls = { repository = "https://github.com/klokie/eml-to-pdf" }
 authors = [
-    {name = "Daniel Grossfeld", email = "github@klokie.com"}
+    {name = "Daniel Grossfeld", email = "github@klokie.com"},
     {name = "Pieter Lenaerts", email = "pieter.aj.lenaerts@gmail.com"}
 ]
 dependencies = [
-    "weasyprint~=63.0"
+    "weasyprint~=63.0",
     "markdown~=3.7"
 ]
 dynamic = ["version", "readme"]
