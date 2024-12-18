@@ -1,4 +1,4 @@
-# eml-to-pdf
+# eml_to_pdf
 
 Convert `.eml` (email) files to PDF using only Python.
 
@@ -28,14 +28,15 @@ This tool allows you to convert email files (`.eml` format) into PDF documents,
 making them easier to archive, share, and view without requiring an email
 client.
 
+Based on various libraries but NOT on a full rendering engine like WebKit
+or Gecko. [python-pdfkit and wkhtmltopdf are deprecated libraries](
+    https://github.com/JazzCore/python-pdfkit?tab=readme-ov-file#deprecation-warning)
+
 ## Dependencies
 
 - Python 3.9+
 - [weasyprint](https://weasyprint.org/) - a visual rendering engine for HTML
 and CSS that can export to PDF.
-  - based on various libraries but NOT on a full rendering engine like WebKit
-  or Gecko. [python-pdfkit and wkhtmltopdf are deprecated libraries](
-  https://github.com/JazzCore/python-pdfkit?tab=readme-ov-file#deprecation-warning)
 - [python-markdown](https://github.com/Python-Markdown/markdown) - for
   HTML'izing plain text.
 
@@ -46,6 +47,9 @@ Clone or download this repo and use pip to install this package:
 ```bash
 pip install .
 ```
+
+Users of Arch linux or derived distro's like Manjora can use AUR package
+[eml_to_pdf](https://aur.archlinux.org/packages/eml_to_pdf-git).
 
 ## Usage
 
@@ -75,6 +79,20 @@ python eml-to-pdf.py -p 'a4 landscape' ./emails ./pdfs
 
 Input file: `Meeting Notes.eml` (sent 2024-03-20)
 Output file: `2024-03-20_Meeting_Notes.pdf`
+
+## Issues
+
+We've tested eml_to_pdf with a couple of cases with embedded images, tables,
+unicode or specific encodings. Refer to
+[tests](/klokie/eml-to-pdf/tree/main/tests) for example emails.
+
+Please open an issue ticket if you have a mail where conversion results are
+not usable, describe what you think your message contains, the output you
+expect and attach an eml file. We're not promising a solution, but we can
+have a look.
+
+Please cleanup any attachments you add of things you don't want to share with
+the world.
 
 ## License
 

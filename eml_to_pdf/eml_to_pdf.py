@@ -107,7 +107,6 @@ def html_from_eml(msg: email.message.Message, eml_path: Path) -> str:
     """Extract HTML content from mail"""
     html_content = ""
     plain_text_content = ""
-    decodec_html = ""
     attachments = {}
 
     for part in msg.walk():
