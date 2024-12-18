@@ -8,6 +8,7 @@ import datetime
 from pathlib import Path
 import base64
 import sys
+import fnmatch
 
 from markdown import markdown
 from weasyprint import HTML, CSS  # type: ignore
@@ -190,6 +191,22 @@ def generate_pdf(html_content: str, output_path: Path, filename: Path,
         print(f"Failed to convert {filename}: {str(e)}")
 
 
+def get_filepaths(input_dir: Path) -> list[Path]:
+    # case_sensitive is added to pathlib.Path.glob() in 3.12
+    # Debian is at 3.11. We can remove this test when Debian reaches 3.12.
+    eml_pat = '*.eml'
+    if sys.version_info.minor >= 12:
+        # Nice new syntax. Unpack the Generator returned by glob() in a list.
+        filepaths = list(input_dir.glob(eml_pat, case_sensitive=None))
+    else:
+        # Ugly old syntax
+        filepaths = [
+                path for path in input_dir.glob("**/*")
+                if fnmatch.fnmatchcase(path.name.lower(), eml_pat)
+                ]
+    return filepaths
+
+
 def main():
     # Set up argument parser
     args = get_args()
@@ -202,8 +219,7 @@ def main():
         sys.exit(1)
 
     # Process all .eml files in input directory
-    for eml_path in args.input_dir.glob('*.eml', case_sensitive=None):
-
+    for eml_path in get_filepaths(args.input_dir):
         # Open and parse the .eml file
         with open(eml_path, "r") as f:
             msg = email.message_from_file(f)

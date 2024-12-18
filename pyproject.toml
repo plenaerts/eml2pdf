@@ -12,6 +12,7 @@ authors = [
     {name = "Daniel Grossfeld", email = "github@klokie.com"},
     {name = "Pieter Lenaerts", email = "pieter.aj.lenaerts@gmail.com"}
 ]
+requires-python = ">= 3.11"
 dependencies = [
     "weasyprint~=63.0",
     "markdown~=3.7"
