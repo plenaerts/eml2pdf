@@ -9,13 +9,19 @@ from pathlib import Path
 import base64
 import sys
 import fnmatch
+import os
+from io import BufferedWriter
+import logging
 
 from markdown import markdown
 from weasyprint import HTML, CSS  # type: ignore
 
 
+logger = logging.getLogger(__name__)
+
+
 def get_args() -> argparse.Namespace:
-    """Construct arguments for cli script"""
+    """Construct arguments for CLI script."""
     parser = argparse.ArgumentParser(description="Convert EML files to PDF")
     parser.add_argument("input_dir", type=Path,
                         help="Directory containing EML files")
@@ -28,6 +34,8 @@ def get_args() -> argparse.Namespace:
                         "or without 'landscape', for example: 'a4 landscape' "
                         "or 'a3' including quotes. Defaults to 'a4'. "
                         "And 'landscape'.")
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='Show verbose debugging info.')
     args = parser.parse_args()
     return args
 
@@ -50,7 +58,7 @@ class Header:
             self.to_addr = header_to_html(msg.get("to", "No recipient"))
             self.subject = header_to_html(msg.get("subject", "No subject"))
         except UnicodeError as e:
-            print(f"Failed to decode header field for {eml_path}: {str(e)}")
+            logger.error(f"Failed to decode header field for {eml_path}: {str(e)}")
 
         msg_date = msg.get("date", "")
         self.date = email.utils.parsedate_to_datetime(msg.get("date", "")) \
@@ -92,7 +100,7 @@ def header_to_html(header_str: str) -> str:
 
 
 def embed_imgs(html_content: str, attachments: dict) -> str:
-    """Return html with embedded images from attachments"""
+    """Return html with embedded images from attachments."""
     if html_content:
         for cid, attachment in attachments.items():
             content_type = attachment['content_type']
@@ -104,8 +112,33 @@ def embed_imgs(html_content: str, attachments: dict) -> str:
     return html_content
 
 
+def decode_to_str(bytes_content: bytes, content_charset: str) -> str:
+    """Smart decode unicode bytes to str."""
+    logger.debug(f'bytes: {str(bytes_content)}')
+    logger.debug(f'charset: {content_charset}')
+    if isinstance(bytes_content, bytes):
+        decoded = bytes_content.decode(content_charset)
+        logger.debug(f'decoded: {decoded}')
+        unicode_escape_pattern = r'\\u[0-9a-fA-F]{4}|\\U[0-9a-fA-F]{8}'
+        if re.search(unicode_escape_pattern, decoded):
+            decoded = decoded.encode('utf-8').decode('unicode-escape')
+            logger.debug(f'unicode escaped decoded : {decoded}')
+    else:
+        decoded = 'Decoding error!'
+    return decoded
+
+
 def html_from_eml(msg: email.message.Message, eml_path: Path) -> str:
-    """Extract HTML content from mail"""
+    """Extract HTML content from mail.
+
+    For every part in the eml, if there is a payload and it is plain text
+    html or an image, decode that part.
+
+    Append decoded plain text and html payloads together.
+
+    Keep a list of image attachments or inline images with a content id. Use
+    that list to insert them in the resulting html.
+    """
     html_content = ""
     plain_text_content = ""
     attachments = {}
@@ -114,43 +147,49 @@ def html_from_eml(msg: email.message.Message, eml_path: Path) -> str:
         content_disposition = part.get_content_disposition()
         content_type = part.get_content_type()
         content_charset = part.get_content_charset() or 'utf-8'
+        payload = part.get_payload(decode=True)
+
+        # Go to the next part if we don't have a payload.
+        if not payload:
+            continue
+
+        payload = bytes(payload)
+        if ((content_type == 'text/plain' or content_type == 'text/html')
+                and not content_disposition):
+            decoded_payload = decode_to_str(payload, content_charset)
+        if decoded_payload == 'Decoding error!':
+            logger.error(f"{eml_path} not decoded correctly.")
         if content_type == 'text/plain' and not content_disposition:
-            bytes_content = part.get_payload(decode=True)
-            if isinstance(bytes_content, bytes):
-                plain_text_content += bytes_content.decode(content_charset)
+            plain_text_content += decoded_payload
         elif content_type == "text/html" and not content_disposition:
-            payload = part.get_payload(decode=True)
-            if isinstance(payload, bytes):
-                html_content = payload.decode(content_charset)
-            else:
-                print(f"{eml_path} not decoded correctly.")
-                html_content = 'Encoding error!'
+            html_content += decoded_payload
         elif ((content_disposition == 'attachment' or
               content_disposition == 'inline') and
               content_type.startswith('image/')):
             # Only extract attached or inline images.
             filename = part.get_filename()
             cid = part.get('Content-ID')
-            content = part.get_payload(decode=True)
 
             # Store attachments by CID or filename
             if cid:
                 cid = cid.strip('<>')
                 attachments[cid] = {
                     'filename': filename,
-                    'content': content,
+                    'content': payload,
                     'content_type': content_type
                 }
 
     html_content = embed_imgs(html_content, attachments) \
         if html_content else markdown(plain_text_content)
-    decoded_html = html_content.encode('utf-8').decode('unicode_escape')
-    return decoded_html
+    return html_content
 
 
-def get_output_path(date: datetime.datetime,
-                    subject: str, output_dir: str) -> Path:
-    """Return a filename from date, subject and output_dir content"""
+def get_output_base_path(date: datetime.datetime,
+                         subject: str, output_dir: str) -> Path:
+    """Return a filename from date, subject and output_dir.
+
+    Regardless if it exists.
+    """
     # Format date for filename prefix
     file_date = date.strftime("%Y-%m-%d") if date else "nodate"
 
@@ -164,34 +203,60 @@ def get_output_path(date: datetime.datetime,
     base_filename = f"{file_date}-{safe_subject}.pdf"
     output_path = output_dir / Path(base_filename)
 
-    # Add number suffix if file exists
-    counter = 1
-    while output_path.exists():
-        base_filename = f"{file_date}-{safe_subject}_{counter}.pdf"
-        output_path = output_dir / Path(base_filename)
-        counter += 1
     return output_path
 
 
-def generate_pdf(html_content: str, output_path: Path, filename: Path,
+def get_exclusive_outfile(outfile_path: Path) -> BufferedWriter:
+    """Return an exclusively opened file object for outfile_path.
+
+    Take the outfile_path as a basename and increment a counter if the
+    filename is not available for exclusive writing.
+
+    Binary mode for weasyprint's HTML.write_pdf().
+
+    We have a pool of email processors whose data may point to the same output
+    file. A process must be sure a filename is and remains available.
+    """
+    try:
+        outfile = open(outfile_path, 'xb')
+    except OSError:
+        outfile = open(os.devnull, 'wb')
+        outfile.close()  # We won't use devnull.
+
+    counter = 1
+    while outfile.name == os.devnull:
+        new_outfile_path = Path(outfile_path.parent) / \
+            Path(f"{outfile_path.stem}_{counter}{outfile_path.suffix}")
+        try:
+            outfile = open(new_outfile_path, 'xb')
+        except OSError:
+            counter += 1
+    return outfile
+
+
+def generate_pdf(html_content: str, outfile_path: Path, infile: Path,
                  debug_html: bool = False, page: str = 'a4'):
-    """Convert HTML to PDF"""
+    """Convert HTML to PDF."""
     try:
         if debug_html:
-            html_file = output_path.parent / Path(output_path.name + '.html')
+            html_file = outfile_path.parent / Path(outfile_path.name + '.html')
             of = open(html_file, 'w')
             of.write(html_content)
             of.close()
         html = HTML(string=html_content)
         css = CSS(string=f'@page {{ size: {page}; margin: 1cm }}')
-        html.write_pdf(output_path, presentational_hints=True,
+
+        outfile = get_exclusive_outfile(outfile_path)
+
+        html.write_pdf(outfile, presentational_hints=True,
                        stylesheets=[css])
-        print(f"Converted {filename} to PDF successfully.")
+        print(f"Converted {infile} to PDF successfully.")
     except Exception as e:
-        print(f"Failed to convert {filename}: {str(e)}")
+        logger.error(f"Failed to convert {infile}: {str(e)}")
 
 
 def get_filepaths(input_dir: Path) -> list[Path]:
+    """Return case insensitive *.eml glob in input_dir."""
     # case_sensitive is added to pathlib.Path.glob() in 3.12
     # Debian is at 3.11. We can remove this test when Debian reaches 3.12.
     eml_pat = '*.eml'
@@ -211,15 +276,20 @@ def main():
     # Set up argument parser
     args = get_args()
 
+    if args.verbose:
+        logging.basicConfig()
+        logger.setLevel(logging.DEBUG)
+
     # Create output directory if it doesn't exist
     try:
         args.output_dir.mkdir(parents=True, exist_ok=True)
     except PermissionError:
-        print(f'Could not create output directory {args.output_dir}.')
+        logger.error(f'Could not create output directory {args.output_dir}.')
         sys.exit(1)
 
     # Process all .eml files in input directory
     for eml_path in get_filepaths(args.input_dir):
+        logging.info(f'Processing {eml_path}')
         # Open and parse the .eml file
         with open(eml_path, "r") as f:
             msg = email.message_from_file(f)
@@ -238,13 +308,14 @@ def main():
 {html_content}
 """
 
-            output_path = get_output_path(email_header.date,
-                                          email_header.subject,
-                                          args.output_dir)
+            output_path = get_output_base_path(email_header.date,
+                                               email_header.subject,
+                                               args.output_dir)
             generate_pdf(html_content, output_path, eml_path,
                          debug_html=args.debug_html, page=args.page)
         else:
-            print(f"No HTML content found in {eml_path}. Skipping...")
+            logger.warning("No plain text or HTML content found "
+                            f"in {eml_path}. Skipping...")
 
     print("All .eml files processed.")
 
