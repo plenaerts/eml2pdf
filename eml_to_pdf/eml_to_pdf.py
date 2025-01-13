@@ -13,9 +13,12 @@ import os
 from io import BufferedWriter
 import logging
 from multiprocessing import Pool
+import hashlib
+from dataclasses import dataclass
 
-from markdown import markdown
 from weasyprint import HTML, CSS  # type: ignore
+from markdown import markdown
+from hurry.filesize import size  # type: ignore
 
 
 logger = logging.getLogger(__name__)
@@ -46,6 +49,21 @@ def get_args() -> argparse.Namespace:
     return args
 
 
+@dataclass
+class Attachment:
+    """Attachment name, size and md5 hash."""
+    name: str
+    size: int
+    md5sum: str
+
+
+class Email:
+    """Parsed eml file with header, attachments, rendered html."""
+    def __init__(self, msg: email.message.Message, eml_path: Path):
+        self.header = Header(msg, eml_path)
+        self.html, self.attachments = walk_eml(msg, eml_path)
+
+
 class Header:
     """Parsed eml header data and html rendering."""
     from_addr = "Not decoded."
@@ -74,13 +92,15 @@ class Header:
             if self.date else "No date"
 
         self.html = f"""
-<table style="font-family: serif; margin-bottom: 20px;">
-<tr><td>from:</td><td>{self.from_addr}</td></tr>
-<tr><td>to:</td><td>{self.to_addr}</td></tr>
-<tr><td>date:</td><td>{self.formatted_date}</td></tr>
-<tr><td>subject:</td><td>{self.subject}</td></tr>
+<table style="font-family: serif;
+              margin-bottom: 20px;
+              border-spacing: 1rem 0;
+              text-align: left">
+<tr><th scope="row">From:</th><td>{self.from_addr}</td></tr>
+<tr><th scope="row">To:</th><td>{self.to_addr}</td></tr>
+<tr><th scope="row">Date:</th><td>{self.formatted_date}</td></tr>
+<tr><th scope="row">Subject:</th><td>{self.subject}</td></tr>
 </table>
-<hr>
 """
 
 
@@ -135,8 +155,14 @@ def decode_to_str(bytes_content: bytes, content_charset: str) -> str:
     return decoded
 
 
-def html_from_eml(msg: email.message.Message, eml_path: Path) -> str:
+def walk_eml(msg: email.message.Message, eml_path: Path) -> \
+        tuple[str, list[Attachment]]:
     """Extract HTML content from mail.
+
+    * msg:   Email message to parse
+    * eml_path: Path of the file being parsed. To display messages.
+
+    *return: tuple of html content and attachment list.
 
     For every part in the eml, if there is a payload and it is plain text
     html or an image, decode that part.
@@ -145,10 +171,13 @@ def html_from_eml(msg: email.message.Message, eml_path: Path) -> str:
 
     Keep a list of image attachments or inline images with a content id. Use
     that list to insert them in the resulting html.
+
+    Create a list of attachments.
     """
     html_content = ""
     plain_text_content = ""
-    attachments = {}
+    cid_attachments = {}
+    attachments: list[Attachment] = list()
 
     for part in msg.walk():
         content_disposition = part.get_content_disposition()
@@ -170,25 +199,33 @@ def html_from_eml(msg: email.message.Message, eml_path: Path) -> str:
             plain_text_content += decoded_payload
         elif content_type == "text/html" and not content_disposition:
             html_content += decoded_payload
-        elif ((content_disposition == 'attachment' or
-              content_disposition == 'inline') and
-              content_type.startswith('image/')):
-            # Only extract attached or inline images.
+        elif (content_disposition == 'attachment' or
+              content_disposition == 'inline'):
             filename = part.get_filename()
-            cid = part.get('Content-ID')
+            # Do stuff to save all attachments.
+            if content_disposition == 'attachment' and filename:
+                filename = header_to_html(filename)
+                filesize = sys.getsizeof(payload)
+                _hash = hashlib.md5()
+                _hash.update(payload)
+                attachments.append(Attachment(name=filename, size=filesize,
+                                              md5sum=_hash.hexdigest()))
+            if content_type.startswith('image/'):
+                # Only extract attached or inline images.
+                cid = part.get('Content-ID')
 
-            # Store attachments by CID or filename
-            if cid:
-                cid = cid.strip('<>')
-                attachments[cid] = {
-                    'filename': filename,
-                    'content': payload,
-                    'content_type': content_type
-                }
+                # Store attachments by CID or filename
+                if cid:
+                    cid = cid.strip('<>')
+                    cid_attachments[cid] = {
+                        'filename': filename,
+                        'content': payload,
+                        'content_type': content_type
+                    }
 
-    html_content = embed_imgs(html_content, attachments) \
+    html_content = embed_imgs(html_content, cid_attachments) \
         if html_content else markdown(plain_text_content)
-    return html_content
+    return (html_content, attachments)
 
 
 def get_output_base_path(date: datetime.datetime | None,
@@ -280,14 +317,35 @@ def get_filepaths(input_dir: Path) -> list[Path]:
     return filepaths
 
 
+def generate_attachment_list(attachments: list[Attachment]) -> str:
+    html = ''
+    if attachments:
+        html += '<table style="font-family: serif; ' \
+                              'margin-bottom: 20px;' \
+                              'border-spacing: 1rem 0;' \
+                              'text-align: left;">'
+        html += '<thead><tr><th colspan="3">Attachments:</th></tr>' \
+                '<tr><th scope="col">Name</th>' \
+                '<th scope="col">Size</th>' \
+                '<th scope="col">MD5sum</th></tr></thead>'
+        for at in attachments:
+            html += f'<tr><td>{at.name}</td><td>{size(at.size)}</td>' \
+                    f'<td>{at.md5sum}</td></tr>'
+        html += "</table>"
+
+    return html
+
+
 def process_eml(eml_path: Path, output_dir: Path, page: str, debug_html: bool):
+    """Main worker function to generate a pdf from an eml."""
     logging.info(f'Processing {eml_path}')
     # Open and parse the .eml file
     with open(eml_path, "r") as f:
         msg = email.message_from_file(f)
 
     email_header = Header(msg, eml_path)
-    html_content = html_from_eml(msg, eml_path)
+    html_content, attachments = walk_eml(msg, eml_path)
+    attachment_list = generate_attachment_list(attachments)
 
     # Convert to PDF if HTML content is found
     if html_content:
@@ -297,6 +355,8 @@ def process_eml(eml_path: Path, output_dir: Path, page: str, debug_html: bool):
 <meta charset="UTF-8">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 {email_header.html}
+{attachment_list}
+<hr>
 {html_content}
 """
 

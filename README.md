@@ -16,11 +16,10 @@ will become `2024-03-15_My_Email.pdf`.
 
 ## Features
 
-- Converts email body (both plain text and HTML)
+- Converts email body (plain text if there is no HTML body)
+- Preserves formatting, character encodings, embedded images.
 - Preserves email metadata (From, To, Subject, Date)
-- Supports embedded images
-- Supports various character encodings
-- Maintains basic text formatting
+- Lists attachments.
 
 ## Purpose
 
@@ -39,6 +38,8 @@ or Gecko. [python-pdfkit and wkhtmltopdf are deprecated libraries](
 and CSS that can export to PDF.
 - [python-markdown](https://github.com/Python-Markdown/markdown) - for
   HTML'izing plain text.
+- [hurry.filesize](https://pypi.org/project/hurry.filesize/) - return human
+  readable filesizes.
 
 ## Installation
 
@@ -108,3 +109,4 @@ Licenses for dependencies:
 
 - weasyprint: BSD-3
 - python-markdown: BSD-3
+- hurry.filesize: ZPL 2.1

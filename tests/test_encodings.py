@@ -5,6 +5,8 @@ from html import escape
 from eml_to_pdf import eml_to_pdf
 from . import generate_test_emls
 import os
+import hashlib
+import sys
 
 
 eml_path = Path('tests/test_data')
@@ -83,8 +85,25 @@ class TestEmls(unittest.TestCase):
             with open(eml_path / Path(eml[0])) as f:
                 eml_msg = email.message_from_file(f)
             with self.subTest(eml=eml[0]):
-                eml_html = eml_to_pdf.html_from_eml(eml_msg, eml[0])
+                eml_html = eml_to_pdf.walk_eml(eml_msg, eml[0])[0]
                 self.assertEqual(eml_html, eml[1].strip())
+
+    def test_attachments(self):
+        """Check if attachments are complete with right name, size and hash."""
+        at_eml = 'attachments.eml'
+        with open(eml_path / Path(at_eml)) as f:
+            eml_msg = email.message_from_file(f)
+        ats_from_eml = eml_to_pdf.walk_eml(eml_msg, at_eml)[1]
+        for at in ats_from_eml:
+            with self.subTest(at=at):
+                name = at.name
+                f_path = eml_path / Path(name)
+                with open(f_path, 'rb') as f:
+                    f_data = f.read()
+                    f_md5sum = hashlib.md5(f_data).hexdigest()
+                    f_size = sys.getsizeof(f_data)
+                self.assertEqual(f_md5sum, at.md5sum)
+                self.assertEqual(f_size, at.size)
 
 
 if __name__ == '__main__':

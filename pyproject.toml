@@ -15,7 +15,8 @@ authors = [
 requires-python = ">= 3.11"
 dependencies = [
     "weasyprint~=63.0",
-    "markdown~=3.7"
+    "markdown~=3.7",
+    "hurry.filesize~=0.9"
 ]
 dynamic = ["version", "readme"]
 
