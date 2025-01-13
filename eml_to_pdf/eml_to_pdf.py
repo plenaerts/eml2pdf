@@ -12,6 +12,7 @@ import fnmatch
 import os
 from io import BufferedWriter
 import logging
+from multiprocessing import Pool
 
 from markdown import markdown
 from weasyprint import HTML, CSS  # type: ignore
@@ -29,13 +30,18 @@ def get_args() -> argparse.Namespace:
                         help="Directory for PDF output")
     parser.add_argument("-d", "--debug_html", action="store_true",
                         help="Write intermediate html file next to pdf's")
+    parser.add_argument("-n", "--number-of-procs", metavar='number', type=int,
+                        default=len(os.sched_getaffinity(0)),
+                        help="Number of parallel processes. Defaults to "
+                        "the number of available logical CPU's to eml_to_pdf.")
     parser.add_argument("-p", "--page", metavar="size", default='a4',
                         help="a3 a4 a5 b4 b5 letter legal or ledger with "
                         "or without 'landscape', for example: 'a4 landscape' "
                         "or 'a3' including quotes. Defaults to 'a4'. "
                         "And 'landscape'.")
     parser.add_argument('-v', '--verbose', action='store_true',
-                        help='Show verbose debugging info.')
+                        help='Show a lot of verbose debugging info. Forces '
+                        'number of procs to 1.')
     args = parser.parse_args()
     return args
 
@@ -58,7 +64,8 @@ class Header:
             self.to_addr = header_to_html(msg.get("to", "No recipient"))
             self.subject = header_to_html(msg.get("subject", "No subject"))
         except UnicodeError as e:
-            logger.error(f"Failed to decode header field for {eml_path}: {str(e)}")
+            logger.error(f"Failed to decode header field for {eml_path}: "
+                         f"{str(e)}")
 
         msg_date = msg.get("date", "")
         self.date = email.utils.parsedate_to_datetime(msg.get("date", "")) \
@@ -184,11 +191,12 @@ def html_from_eml(msg: email.message.Message, eml_path: Path) -> str:
     return html_content
 
 
-def get_output_base_path(date: datetime.datetime,
-                         subject: str, output_dir: str) -> Path:
+def get_output_base_path(date: datetime.datetime | None,
+                         subject: str, output_dir: Path) -> Path:
     """Return a filename from date, subject and output_dir.
 
-    Regardless if it exists.
+    Do not check if this filename exists or is writable. This should
+    be done later.
     """
     # Format date for filename prefix
     file_date = date.strftime("%Y-%m-%d") if date else "nodate"
@@ -272,6 +280,36 @@ def get_filepaths(input_dir: Path) -> list[Path]:
     return filepaths
 
 
+def process_eml(eml_path: Path, output_dir: Path, page: str, debug_html: bool):
+    logging.info(f'Processing {eml_path}')
+    # Open and parse the .eml file
+    with open(eml_path, "r") as f:
+        msg = email.message_from_file(f)
+
+    email_header = Header(msg, eml_path)
+    html_content = html_from_eml(msg, eml_path)
+
+    # Convert to PDF if HTML content is found
+    if html_content:
+        # Add UTF-8 meta tag and email header if not present
+        if isinstance(html_content, str):
+            html_content = f"""
+<meta charset="UTF-8">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+{email_header.html}
+{html_content}
+"""
+
+        output_path = get_output_base_path(email_header.date,
+                                           email_header.subject,
+                                           output_dir)
+        generate_pdf(html_content, output_path, eml_path,
+                     debug_html=debug_html, page=page)
+    else:
+        logger.warning("No plain text or HTML content found "
+                       f"in {eml_path}. Skipping...")
+
+
 def main():
     # Set up argument parser
     args = get_args()
@@ -288,34 +326,19 @@ def main():
         sys.exit(1)
 
     # Process all .eml files in input directory
-    for eml_path in get_filepaths(args.input_dir):
-        logging.info(f'Processing {eml_path}')
-        # Open and parse the .eml file
-        with open(eml_path, "r") as f:
-            msg = email.message_from_file(f)
-
-        email_header = Header(msg, eml_path)
-        html_content = html_from_eml(msg, eml_path)
-
-        # Convert to PDF if HTML content is found
-        if html_content:
-            # Add UTF-8 meta tag and email header if not present
-            if isinstance(html_content, str):
-                html_content = f"""
-<meta charset="UTF-8">
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-{email_header.html}
-{html_content}
-"""
-
-            output_path = get_output_base_path(email_header.date,
-                                               email_header.subject,
-                                               args.output_dir)
-            generate_pdf(html_content, output_path, eml_path,
-                         debug_html=args.debug_html, page=args.page)
-        else:
-            logger.warning("No plain text or HTML content found "
-                            f"in {eml_path}. Skipping...")
+    eml_file_paths = get_filepaths(args.input_dir)
+    # Don't use multiprocessing if n is 1 or we output debug logging.
+    # We output a lot of long debug messages. That's not multiprocess safe.
+    # Messages would get garbled.
+    if args.number_of_procs == 1 or args.verbose or \
+            logger.level == logging.DEBUG:
+        for ep in eml_file_paths:
+            process_eml(ep, Path(args.output_dir), args.page, args.debug_html)
+    else:
+        p_args = ((ep, Path(args.output_dir), args.page, args.debug_html)
+                  for ep in eml_file_paths)
+        with Pool(args.number_of_procs) as p:
+            p.starmap(process_eml, p_args)
 
     print("All .eml files processed.")
 
