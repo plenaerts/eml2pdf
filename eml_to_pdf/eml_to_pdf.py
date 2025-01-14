@@ -20,7 +20,9 @@ from weasyprint import HTML, CSS  # type: ignore
 from markdown import markdown
 from hurry.filesize import size  # type: ignore
 
+from . import security
 
+logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 
@@ -40,8 +42,12 @@ def get_args() -> argparse.Namespace:
     parser.add_argument("-p", "--page", metavar="size", default='a4',
                         help="a3 a4 a5 b4 b5 letter legal or ledger with "
                         "or without 'landscape', for example: 'a4 landscape' "
-                        "or 'a3' including quotes. Defaults to 'a4'. "
-                        "And 'landscape'.")
+                        "or 'a3' including quotes. Defaults to 'a4', implying "
+                        "portrait.")
+    parser.add_argument("--unsafe", action="store_true", default=False,
+                        help="Don't sanitize HTML from potentially unsafe "
+                        "elements such as remote images, scripts, etc. This "
+                        "may expose sensitive user information.")
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Show a lot of verbose debugging info. Forces '
                         'number of procs to 1.')
@@ -280,8 +286,11 @@ def get_exclusive_outfile(outfile_path: Path) -> BufferedWriter:
 
 
 def generate_pdf(html_content: str, outfile_path: Path, infile: Path,
-                 debug_html: bool = False, page: str = 'a4'):
+                 debug_html: bool = False, page: str = 'a4',
+                 unsafe: bool = False):
     """Convert HTML to PDF."""
+    if not unsafe:
+        html_content = security.sanitize_html(html_content)
     try:
         if debug_html:
             html_file = outfile_path.parent / Path(outfile_path.name + '.html')
@@ -336,7 +345,8 @@ def generate_attachment_list(attachments: list[Attachment]) -> str:
     return html
 
 
-def process_eml(eml_path: Path, output_dir: Path, page: str, debug_html: bool):
+def process_eml(eml_path: Path, output_dir: Path, page: str = 'a4',
+                debug_html: bool = False, unsafe: bool = False):
     """Main worker function to generate a pdf from an eml."""
     logging.info(f'Processing {eml_path}')
     # Open and parse the .eml file
@@ -364,7 +374,7 @@ def process_eml(eml_path: Path, output_dir: Path, page: str, debug_html: bool):
                                            email_header.subject,
                                            output_dir)
         generate_pdf(html_content, output_path, eml_path,
-                     debug_html=debug_html, page=page)
+                     debug_html=debug_html, page=page, unsafe=unsafe)
     else:
         logger.warning("No plain text or HTML content found "
                        f"in {eml_path}. Skipping...")
@@ -373,9 +383,12 @@ def process_eml(eml_path: Path, output_dir: Path, page: str, debug_html: bool):
 def main():
     # Set up argument parser
     args = get_args()
+    if args.unsafe:
+        logger.warning('WARNING! Not trying to '
+                       'sanitize HTML. This may expose sensitive user '
+                       'information.')
 
     if args.verbose:
-        logging.basicConfig()
         logger.setLevel(logging.DEBUG)
 
     # Create output directory if it doesn't exist
@@ -393,9 +406,11 @@ def main():
     if args.number_of_procs == 1 or args.verbose or \
             logger.level == logging.DEBUG:
         for ep in eml_file_paths:
-            process_eml(ep, Path(args.output_dir), args.page, args.debug_html)
+            process_eml(ep, Path(args.output_dir), args.page, args.debug_html,
+                        args.unsafe)
     else:
-        p_args = ((ep, Path(args.output_dir), args.page, args.debug_html)
+        p_args = ((ep, Path(args.output_dir), args.page, args.debug_html,
+                   args.unsafe)
                   for ep in eml_file_paths)
         with Pool(args.number_of_procs) as p:
             p.starmap(process_eml, p_args)

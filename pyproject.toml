@@ -16,7 +16,8 @@ requires-python = ">= 3.11"
 dependencies = [
     "weasyprint~=63.0",
     "markdown~=3.7",
-    "hurry.filesize~=0.9"
+    "hurry.filesize~=0.9",
+    "beautifulsoup4~=4.12"
 ]
 dynamic = ["version", "readme"]
 

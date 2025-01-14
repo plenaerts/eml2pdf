@@ -17,6 +17,7 @@ will become `2024-03-15_My_Email.pdf`.
 ## Features
 
 - Converts email body (plain text if there is no HTML body)
+- Tries to filter potential security or privacy issues.
 - Preserves formatting, character encodings, embedded images.
 - Preserves email metadata (From, To, Subject, Date)
 - Lists attachments.
@@ -35,11 +36,13 @@ or Gecko. [python-pdfkit and wkhtmltopdf are deprecated libraries](
 
 - Python 3.11+
 - [weasyprint](https://weasyprint.org/) - a visual rendering engine for HTML
-and CSS that can export to PDF.
+  and CSS that can export to PDF.
 - [python-markdown](https://github.com/Python-Markdown/markdown) - for
   HTML'izing plain text.
 - [hurry.filesize](https://pypi.org/project/hurry.filesize/) - return human
   readable filesizes.
+- [beautifulsoup4](https://www.crummy.com/software/BeautifulSoup/) - HTML
+  sanitization.
 
 ## Installation
 
@@ -71,7 +74,10 @@ options:
                         of available logical CPU's to eml_to_pdf.
   -p size, --page size  a3 a4 a5 b4 b5 letter legal or ledger with or without
                         'landscape', for example: 'a4 landscape' or 'a3'
-                        including quotes. Defaults to 'a4'. And 'landscape'.
+                        including quotes. Defaults to 'a4', implying portrait.
+  --unsafe              Don't sanitize HTML from potentially unsafe elements
+                        such as remote images, scripts, etc. This may expose
+                        sensitive user information.
   -v, --verbose         Show a lot of verbose debugging info. Forces number
                         of procs to 1.
 ```
@@ -85,6 +91,32 @@ python eml-to-pdf.py -p 'a4 landscape' ./emails ./pdfs
 
 Input file: `Meeting Notes.eml` (sent 2024-03-20)
 Output file: `2024-03-20_Meeting_Notes.pdf`
+
+## Security
+
+### HTML Sanitization
+
+Emails can contain HTML which can contain stuff you don't expect or want.
+
+In the best case your emails contain clean HTML.
+
+In common cases they will contain intentional tracking of end users using
+forged remote sources for images and other resources. This is a common
+practice in marketing or mass mailing solutions.
+
+eml_to_pdf tries to keep the formatting in your mails ánd clean up
+potentially malicious content using custom filtering of tags, remote images,
+remote stylesheets, etc.
+
+We try to cleanup. We can't give you a 100% guarantee. If you're very worried,
+please cleanup your mails yourself.
+
+### MD5 sums of attachments
+
+eml_to_pdf lists attachments with their md5sums. You can use these md5sums for
+your convenience. They give a very strong indication that files are not
+altered. They will not be usable as proof in courts of law.
+They are not intended to be.
 
 ## Issues
 
@@ -110,3 +142,4 @@ Licenses for dependencies:
 - weasyprint: BSD-3
 - python-markdown: BSD-3
 - hurry.filesize: ZPL 2.1
+- beautifulsoup4: MIT
