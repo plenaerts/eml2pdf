@@ -1,36 +1,29 @@
 # eml_to_pdf
 
-Convert `.eml` (email) files to PDF using only Python.
+**DEV BRANCH**
 
-The converted PDF files will be saved in the specified output directory.
-The output filenames are formatted as:
-`YYYY-MM-DD_subject[-counter].pdf`, where:
+Convert `.eml` (email) files to PDF using only Python, making them easier
+to archive, share, and view without requiring an email client.
 
-- The date prefix is taken from the email's sent date.
-- The email subject is taken from the email headers.
-- Should there be any duplicate filenames, then a counter will be added.
-- The extension is changed to `.pdf`
+Based on various modest libraries but NOT on a full rendering engine like
+WebKit or Gecko. [python-pdfkit](https://github.com/JazzCore/python-pdf-kit)
+and [wkhtmltopdf](https://github.com/wkhtmltopdf/wkhtmltopdf) are
+[deprecated libraries](
+    https://github.com/JazzCore/python-pdfkit?tab=readme-ov-file#deprecation-warning)
 
-For example, `some_file.eml` with subject "My Email" sent on March 15, 2024
-will become `2024-03-15_My_Email.pdf`.
+Runs on all platforms that support the dependencies, incl. Microsoft Windows
+
+This software is in beta state. There are some unit tests, I use it in my own
+workflow, but we need some actual users/downloads, basics for translations and
+boilerplate debian packaging files to proceed to a 1.0 release.
 
 ## Features
 
-- Converts email body (plain text if there is no HTML body)
+- Converts email body plain from HTML or plain text message body.
 - Tries to filter potential security or privacy issues.
 - Preserves formatting, character encodings, embedded images.
-- Preserves email metadata (From, To, Subject, Date)
-- Lists attachments.
-
-## Purpose
-
-This tool allows you to convert email files (`.eml` format) into PDF documents,
-making them easier to archive, share, and view without requiring an email
-client.
-
-Based on various libraries but NOT on a full rendering engine like WebKit
-or Gecko. [python-pdfkit and wkhtmltopdf are deprecated libraries](
-    https://github.com/JazzCore/python-pdfkit?tab=readme-ov-file#deprecation-warning)
+- Generates a header section with email metadata From, To, Subject, Date and, if
+  any, a list of attachments with size and md5sum.
 
 ## Dependencies
 
@@ -46,16 +39,39 @@ or Gecko. [python-pdfkit and wkhtmltopdf are deprecated libraries](
 
 ## Installation
 
-Clone or download this repo and use pip to install this package:
+Download the right executable for your platform from the [latest release](
+  releases/latest) and run it in your shell.
+
+or
+
+use pip after downloading the source release package or cloning or downloading
+this repo to install this package:
 
 ```bash
 pip install .
 ```
 
 Users of Arch linux or derived distro's like Manjora can use AUR package
-[eml_to_pdf](https://aur.archlinux.org/packages/eml_to_pdf-git).
+[eml_to_pdf-git](https://aur.archlinux.org/packages/eml_to_pdf-git).
+
+Check [INSTALL.md](INSTALL.md) for more detailed installation instructions if
+you need more help.
 
 ## Usage
+
+eml_to_pdf will convert all .eml files in an input directory and
+save converted PDF files in the specified output directory.
+
+The output filenames are formatted as:
+`YYYY-MM-DD_subject[-counter].pdf`, where:
+
+- The date prefix is taken from the email's sent date.
+- The email subject is taken from the email headers.
+- Should there be any duplicate filenames, then a counter will be added.
+- The extension is changed to `.pdf`
+
+For example, `some_file.eml` with subject "My Email" sent on March 15, 2024
+will become `2024-03-15_My_Email.pdf`.
 
 ```text
 usage: eml_to_pdf.py [-h] [-d] [-n number] [-p size] [-v] input_dir output_dir
@@ -89,12 +105,16 @@ in `./pdf`:
 python eml-to-pdf.py -p 'a4 landscape' ./emails ./pdfs
 ```
 
-Input file: `Meeting Notes.eml` (sent 2024-03-20)
-Output file: `2024-03-20_Meeting_Notes.pdf`
+### Page size
 
-## Security
+Not all emails are properly formatted. Part of your mail might not be visible
+in the pdf in case an email doesn't limit width of some elements such as
+images, tables or others. You can play with page sizes and orientations to try
+and accomodate wide emails.
 
-### HTML Sanitization
+### Security
+
+#### HTML Sanitization
 
 Emails can contain HTML which can contain stuff you don't expect or want.
 
@@ -111,7 +131,7 @@ remote stylesheets, etc.
 We try to cleanup. We can't give you a 100% guarantee. If you're very worried,
 please cleanup your mails yourself.
 
-### MD5 sums of attachments
+#### MD5 sums of attachments
 
 eml_to_pdf lists attachments with their md5sums. You can use these md5sums for
 your convenience. They give a very strong indication that files are not
@@ -121,8 +141,8 @@ They are not intended to be.
 ## Issues
 
 We've tested eml_to_pdf with a couple of cases with embedded images, tables,
-unicode or specific encodings. Refer to
-[tests](/klokie/eml-to-pdf/tree/main/tests) for example emails.
+unicode or specific encodings. Refer to [tests](tree/main/tests) for example
+emails.
 
 Please open an issue ticket if you have a mail where conversion results are
 not usable. Describe what you think your message contains and the output you
@@ -132,6 +152,12 @@ have a look.
 
 **Please cleanup any attachments you add of things you don't want to share with
 the world.**
+
+## Credits
+
+eml_to_pdf was originally forked from [klokie/eml-to-pdf](
+  https://github.com/klokie/eml-to-pdf) by [Daniel Grossfeld](
+  https://github.com/klokie/).
 
 ## License
 
