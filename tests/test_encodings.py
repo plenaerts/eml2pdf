@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 import email
 from html import escape
-from eml_to_pdf import eml_to_pdf
+from eml2pdf import eml2pdf
 from . import generate_test_emls
 import os
 import hashlib
@@ -52,7 +52,7 @@ def get_tgt_html(html_path: Path) -> str:
 class TestEmls(unittest.TestCase):
     def test_headers(self):
         """Headers should remain the same from src data and eml files."""
-        infiles = eml_to_pdf.get_filepaths(Path(os.getcwd()))
+        infiles = eml2pdf.get_filepaths(Path(os.getcwd()))
         for eml in infiles:
             with open(eml) as f:
                 eml_msg = email.message_from_file(f)
@@ -67,7 +67,7 @@ class TestEmls(unittest.TestCase):
                           ('subject', 'subject')
                           ]:
                     src_head = escape(getattr(src_eml, h[0]))
-                    eml_head = eml_to_pdf.header_to_html(eml_msg.get(h[1]))
+                    eml_head = eml2pdf.header_to_html(eml_msg.get(h[1]))
                     self.assertEqual(src_head, eml_head)
 
     def test_plain_text(self):
@@ -85,7 +85,7 @@ class TestEmls(unittest.TestCase):
             with open(eml_path / Path(eml[0])) as f:
                 eml_msg = email.message_from_file(f)
             with self.subTest(eml=eml[0]):
-                eml_html = eml_to_pdf.walk_eml(eml_msg, eml[0])[0]
+                eml_html = eml2pdf.walk_eml(eml_msg, eml[0])[0]
                 self.assertEqual(eml_html, eml[1].strip())
 
     def test_attachments(self):
@@ -93,7 +93,7 @@ class TestEmls(unittest.TestCase):
         at_eml = 'attachments.eml'
         with open(eml_path / Path(at_eml)) as f:
             eml_msg = email.message_from_file(f)
-        ats_from_eml = eml_to_pdf.walk_eml(eml_msg, at_eml)[1]
+        ats_from_eml = eml2pdf.walk_eml(eml_msg, at_eml)[1]
         for at in ats_from_eml:
             with self.subTest(at=at):
                 name = at.name

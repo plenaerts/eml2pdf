@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 from shutil import rmtree
 from os import mkdir
-from eml_to_pdf import eml_to_pdf
+from eml2pdf import eml2pdf
 
 test_dir = Path('tmp_test')
 
@@ -28,13 +28,13 @@ class ExclusiveFileTestCase(unittest.TestCase):
         """An existing file should get an increment."""
         test_base_path = test_dir / Path('testfile.pdf')
         target_file_path = test_dir / Path('testfile_3.pdf')
-        outfile = eml_to_pdf.get_exclusive_outfile(test_base_path)
+        outfile = eml2pdf.get_exclusive_outfile(test_base_path)
         outfile.close()
         self.assertTrue(outfile.name == str(target_file_path))
 
     def test_needs_no_increment(self):
         """A non existing file should NOT get an increment."""
         test_base_path = test_dir / Path('testfile_unique.pdf')
-        outfile = eml_to_pdf.get_exclusive_outfile(test_base_path)
+        outfile = eml2pdf.get_exclusive_outfile(test_base_path)
         outfile.close()
         self.assertTrue(outfile.name == str(test_base_path))

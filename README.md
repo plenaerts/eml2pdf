@@ -1,6 +1,4 @@
-# eml_to_pdf
-
-**DEV BRANCH**
+# eml2pdf
 
 Convert `.eml` (email) files to PDF using Python, making them easier
 to archive, share, and view without requiring an email client.
@@ -43,10 +41,10 @@ Debian packaging files to proceed to a 1.0 release.
 ## Installation
 
 On a desktop system, chances are high that you have Pango installed. In this
-case you can install eml_to_pdf from PyPi using pip:
+case you can install eml2pdf from PyPi using pip:
 
 ```bash
-pip install eml_to_pdf
+pip install eml2pdf
 ```
 
 If weasyprint can't find Pango, best is to [install weasyprint using your
@@ -54,14 +52,14 @@ system's package manager](
 https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation).
 
 Users of Arch linux or derived distro's like Manjora can use AUR package
-[eml_to_pdf-git](https://aur.archlinux.org/packages/eml_to_pdf-git).
+[eml2pdf-git](https://aur.archlinux.org/packages/eml_to_pdf-git).
 
 Check [INSTALL.md](INSTALL.md) for more detailed installation instructions if
 you need more help.
 
 ## Usage
 
-eml_to_pdf will convert all .eml files in an input directory and
+eml2pdf will convert all .eml files in an input directory and
 save converted PDF files in a specified output directory.
 
 The output filenames are formatted as:
@@ -76,7 +74,7 @@ For example, `some_file.eml` with subject "My Email" sent on March 15, 2024
 will become `2024-03-15_My_Email.pdf`.
 
 ```text
-usage: eml_to_pdf.py [-h] [-d] [-n number] [-p size] [-v] input_dir output_dir
+usage: eml2pdf [-h] [-d] [-n number] [-p size] [-v] input_dir output_dir
 
 Convert EML files to PDF
 
@@ -89,7 +87,7 @@ options:
   -d, --debug_html      Write intermediate html file next to pdf's.
   -n number, --number-of-procs number
                         Number of parallel processes. Defaults to the number
-                        of available logical CPU's to eml_to_pdf.
+                        of available logical CPU's to eml2pdf.
   -p size, --page size  a3 a4 a5 b4 b5 letter legal or ledger with or without
                         'landscape', for example: 'a4 landscape' or 'a3'
                         including quotes. Defaults to 'a4', implying portrait.
@@ -104,20 +102,20 @@ Example below renders all .eml files in `./emails` to a4 landscape oriented pdf'
 in `./pdf`:
 
 ```bash
-python eml-to-pdf.py -p 'a4 landscape' ./emails ./pdfs
+eml2pdf -p 'a4 landscape' ./emails ./pdfs
 ```
 
 ### Debug HTML
 
-eml_to_pdf will first parse email header info such as date, subject, etc. Next
-the mail body will be parsed. If there is an HTML body, eml_to_pdf will clean
+eml2pdf will first parse email header info such as date, subject, etc. Next
+the mail body will be parsed. If there is an HTML body, eml2pdf will clean
 this HTML body (ref. below under Security) and prepend this resulting HTML with
 a summary table.
 
 In a next step this HTML is rendered by weasyprint to a PDF.
 
 The '--debug_html' flag will save this intermediate HTML. You can use this to
-check if there is an email parsing issue in eml_to_pdf or a PDF conversion issue
+check if there is an email parsing issue in eml2pdf or a PDF conversion issue
 in weasyprint.
 
 ### Page size
@@ -139,32 +137,32 @@ In common cases they will contain intentional tracking of end users using
 forged remote sources for images and other resources. This is a common
 practice in marketing or mass mailing solutions.
 
-eml_to_pdf tries to keep the formatting in your mails ánd clean up
+eml2pdf tries to keep the formatting in your mails ánd clean up
 potentially malicious content using custom filtering of tags, remote images,
 remote stylesheets, etc.
 
 We try to cleanup. We can't give you a 100% guarantee. If you're very worried,
 please cleanup your mails yourself.
 
-You can use the --unsafe flag if you don't want eml_to_pdf to try and
+You can use the --unsafe flag if you don't want eml2pdf to try and
 sanitize your mails. Check your mails' content before you use this flag!
 
 #### MD5 sums of attachments
 
-eml_to_pdf lists attachments with their md5sums. You can use these md5sums for
+eml2pdf lists attachments with their md5sums. You can use these md5sums for
 your convenience. They give a very strong indication that files are not
 altered. **They will not be usable as proof in courts of law.**
 They are not intended to be.
 
 ## Reporting issues
 
-We've tested eml_to_pdf with a couple of cases with embedded images, tables,
+We've tested eml2pdf with a couple of cases with embedded images, tables,
 unicode or specific encodings. Refer to [tests](tree/main/tests) for example
 emails.
 
 Please open an issue ticket if you have a mail where conversion results are
 not usable. Describe what you think your message contains and the output you
-expect. Attach verbose eml_to_pdf output of only this eml file and attach
+expect. Attach verbose eml2pdf output of only this eml file and attach
 the eml file itself. We're not promising a solution, but we can
 have a look.
 
@@ -173,13 +171,13 @@ the world.**
 
 ## Credits
 
-eml_to_pdf was originally forked from [klokie/eml-to-pdf](
+eml2pdf was originally forked from [klokie/eml-to-pdf](
 https://github.com/klokie/eml-to-pdf) by [Daniel Grossfeld](
 https://github.com/klokie/).
 
 ## License
 
-eml_to_pdf code is published under the MIT license.
+eml2pdf code is published under the MIT license.
 
 Licenses for dependencies:
 
