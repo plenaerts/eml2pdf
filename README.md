@@ -10,7 +10,7 @@ various Python libraries but NOT on a full rendering engine like
 WebKit or Gecko. [python-pdfkit](https://github.com/JazzCore/python-pdf-kit)
 and [wkhtmltopdf](https://github.com/wkhtmltopdf/wkhtmltopdf) are
 [deprecated libraries](
-    https://github.com/JazzCore/python-pdfkit?tab=readme-ov-file#deprecation-warning)
+https://github.com/JazzCore/python-pdfkit?tab=readme-ov-file#deprecation-warning)
 
 Should run on Linux distributions with Pango and Python and macOS. The Pango
 dependency is a challenge on Windows at the moment.
@@ -32,7 +32,7 @@ Debian packaging files to proceed to a 1.0 release.
 - Python 3.11+
 - [weasyprint](https://weasyprint.org/) - a visual rendering engine for HTML
   and CSS that can export to PDF. Weasyprint depends on [GNOME's Pango](
-    https://gitlab.gnome.org/GNOME/pango).
+  https://gitlab.gnome.org/GNOME/pango).
 - [python-markdown](https://github.com/Python-Markdown/markdown) - for
   HTML'izing plain text.
 - [hurry.filesize](https://pypi.org/project/hurry.filesize/) - return human
@@ -51,7 +51,7 @@ pip install eml_to_pdf
 
 If weasyprint can't find Pango, best is to [install weasyprint using your
 system's package manager](
-  https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation).
+https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation).
 
 Users of Arch linux or derived distro's like Manjora can use AUR package
 [eml_to_pdf-git](https://aur.archlinux.org/packages/eml_to_pdf-git).
@@ -174,8 +174,8 @@ the world.**
 ## Credits
 
 eml_to_pdf was originally forked from [klokie/eml-to-pdf](
-  https://github.com/klokie/eml-to-pdf) by [Daniel Grossfeld](
-  https://github.com/klokie/).
+https://github.com/klokie/eml-to-pdf) by [Daniel Grossfeld](
+https://github.com/klokie/).
 
 ## License
 
