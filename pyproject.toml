@@ -17,10 +17,10 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "weasyprint~=63.0",
+    "weasyprint~=64.0",
     "markdown~=3.7",
     "hurry.filesize~=0.9",
-    "beautifulsoup4~=4.12"
+    "beautifulsoup4~=4.13"
 ]
 dynamic = ["version"]
 
@@ -30,7 +30,7 @@ Repository = "https://github.com/plenaerts/eml2pdf"
 Issues = "https://github.com/plenaerts/eml2pdf/issues"
 
 [project.scripts]
-eml_to_pdf = "eml2pdf.eml2pdf:main"
+eml2pdf = "eml2pdf.eml2pdf:main"
 
 [tool.setuptools]
 packages = ["eml2pdf"]
