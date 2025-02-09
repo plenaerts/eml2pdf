@@ -1,3 +1,3 @@
-## Unreleased
+## v0.1.1
 
-- setuptools_scm files for git archives 
+- Fix broken 'pip install' when downloading source archive from github.
