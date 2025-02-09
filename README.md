@@ -52,7 +52,7 @@ system's package manager](
 https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation).
 
 Users of Arch linux or derived distro's like Manjora can use AUR package
-[eml2pdf-git](https://aur.archlinux.org/packages/eml_to_pdf-git).
+[eml2pdf](https://aur.archlinux.org/packages/eml2pdf).
 
 Check [INSTALL.md](INSTALL.md) for more detailed installation instructions if
 you need more help.
