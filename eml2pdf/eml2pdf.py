@@ -10,6 +10,13 @@ logger = logging.getLogger(__name__)
 
 def get_args() -> argparse.Namespace:
     """Construct arguments for CLI script."""
+
+    # Determine default number of processors (cross-platform)
+    if hasattr(os, 'sched_getaffinity'):
+        default_procs = len(os.sched_getaffinity(0))
+    else:
+        default_procs = os.cpu_count() or 1
+
     parser = argparse.ArgumentParser(description="Convert EML files to PDF")
     parser.add_argument("input_dir", type=Path,
                         help="Directory containing EML files")
@@ -18,7 +25,7 @@ def get_args() -> argparse.Namespace:
     parser.add_argument("-d", "--debug_html", action="store_true",
                         help="Write intermediate html file next to pdf's")
     parser.add_argument("-n", "--number-of-procs", metavar='number', type=int,
-                        default=len(os.sched_getaffinity(0)),
+                        default=default_procs,
                         help="Number of parallel processes. Defaults to "
                         "the number of available logical CPU's to eml_to_pdf.")
     parser.add_argument("-p", "--page", metavar="size", default='a4',
