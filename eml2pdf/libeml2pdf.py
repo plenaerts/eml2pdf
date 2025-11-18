@@ -168,12 +168,12 @@ def walk_eml(msg: email.message.Message, eml_path: Path) -> \
         if ((content_type == 'text/plain' or content_type == 'text/html')
                 and not content_disposition):
             decoded_payload = decode_to_str(payload, content_charset)
-        if decoded_payload == 'Decoding error!':
-            logger.error(f"{eml_path} not decoded correctly.")
-        if content_type == 'text/plain' and not content_disposition:
-            plain_text_content += decoded_payload
-        elif content_type == "text/html" and not content_disposition:
-            html_content += decoded_payload
+            if decoded_payload == 'Decoding error!':
+                logger.error(f"{eml_path} not decoded correctly.")
+            if content_type == 'text/plain':
+                plain_text_content += decoded_payload
+            elif content_type == "text/html":
+                html_content += decoded_payload
         elif (content_disposition == 'attachment' or
               content_disposition == 'inline'):
             filename = part.get_filename()
