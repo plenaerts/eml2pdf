@@ -1,6 +1,6 @@
 # Eml2pdf changelog
 
-## Unreleased
+## v1.0 - 2025-11-25
 
 - Fix issue #1 - support cpu count on Windows.
 - Split off libeml2pdf from eml2pdf module to prepare for GUI support.
