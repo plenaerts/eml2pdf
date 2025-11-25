@@ -89,8 +89,8 @@ options:
                         Number of parallel processes. Defaults to the number
                         of available logical CPU's to eml2pdf.
   -p size, --page size  a3 a4 a5 b4 b5 letter legal or ledger with or without
-                        'landscape', for example: 'a4 landscape' or 'a3'
-                        including quotes. Defaults to 'a4', implying portrait.
+                        "landscape", for example: "a4 landscape" or "a3"
+                        including quotes. Defaults to "a4", implying portrait.
   --unsafe              Don't sanitize HTML from potentially unsafe elements
                         such as remote images, scripts, etc. This may expose
                         sensitive user information.
@@ -102,7 +102,7 @@ Example below renders all .eml files in `./emails` to a4 landscape oriented pdf'
 in `./pdf`:
 
 ```bash
-eml2pdf -p 'a4 landscape' ./emails ./pdfs
+eml2pdf -p "a4 landscape" ./emails ./pdfs
 ```
 
 ### Debug HTML

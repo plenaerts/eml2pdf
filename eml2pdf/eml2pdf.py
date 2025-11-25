@@ -29,10 +29,11 @@ def get_args() -> argparse.Namespace:
                         help="Number of parallel processes. Defaults to "
                         "the number of available logical CPU's to eml_to_pdf.")
     parser.add_argument("-p", "--page", metavar="size", default='a4',
-                        help="a3 a4 a5 b4 b5 letter legal or ledger with "
-                        "or without 'landscape', for example: 'a4 landscape' "
-                        "or 'a3' including quotes. Defaults to 'a4', implying "
-                        "portrait.")
+                        help="One of a3, a4, a5, b4, b5, letter, legal, or "
+                        "ledger, with or without \"landscape\", for example: "
+                        "\"a4 landscape\" or a3. Surround with quotes if "
+                        "there is a space in the argument value. "
+                        "Defaults to \"a4\", implying portrait.")
     parser.add_argument("--unsafe", action="store_true", default=False,
                         help="Don't sanitize HTML from potentially unsafe "
                         "elements such as remote images, scripts, etc. This "

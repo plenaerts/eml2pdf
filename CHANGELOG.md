@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix issue #1 - support cpu count on Windows.
 - Split off libeml2pdf from eml2pdf module to prepare for GUI support.
 - README.md: AUR package renamed.
 
