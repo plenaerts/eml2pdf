@@ -1,0 +1,28 @@
+From: sender@example.com
+To: recipient@example.com
+Subject: Test: Plain and HTML both inline
+Date: Mon, 22 Dec 2025 10:00:00 +0000
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="----=_boundary_123"
+
+------=_boundary_123
+Content-Type: text/plain; charset=UTF-8
+Content-Disposition: inline
+
+This is the plain text version.
+It should NOT appear if HTML is present.
+
+------=_boundary_123
+Content-Type: text/html; charset=UTF-8
+Content-Disposition: inline
+
+<!DOCTYPE html>
+<html>
+<head><title>Test</title></head>
+<body>
+<p>This is the <b>HTML</b> version.</p>
+<p>It should be rendered instead of plain text.</p>
+</body>
+</html>
+
+------=_boundary_123--

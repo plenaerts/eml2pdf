@@ -116,6 +116,14 @@ class TestEmls(unittest.TestCase):
         # Check if the .doc was found in the attachments list
         self.assertEqual(len(attachments_from_eml), 1, f"Should have found 1 attachment {attachments_from_eml}") 
 
+    def test_plain_and_html_inline(self):
+        """Emls with both plain text and html inline parts render once."""
+        phi_eml = ('plain_and_html_inline.eml',
+                   get_tgt_html(Path('plain_and_html_inline.html')))
+        with open(eml_path / Path(phi_eml[0])) as f:
+            eml_msg = email.message_from_file(f)
+            eml_html = libeml2pdf.walk_eml(eml_msg, phi_eml)[0]
+            self.assertEqual(eml_html.strip(), phi_eml[1].strip())
 
 
 if __name__ == '__main__':
