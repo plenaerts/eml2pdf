@@ -105,6 +105,18 @@ class TestEmls(unittest.TestCase):
                 self.assertEqual(f_md5sum, at.md5sum)
                 self.assertEqual(f_size, at.size)
 
+    def test_inline_doc_is_captured_as_attachment(self):
+        """Verify that a .doc file with 'Content-Disposition: inline' 
+        is correctly identified as an attachment.
+        """
+        at_eml = 'email_with_doc_attachment.eml'
+        with open(eml_path / Path(at_eml)) as f:
+            eml_msg = email.message_from_file(f)
+        attachments_from_eml = libeml2pdf.walk_eml(eml_msg, at_eml)[1]
+        # Check if the .doc was found in the attachments list
+        self.assertEqual(len(attachments_from_eml), 1, f"Should have found 1 attachment {attachments_from_eml}") 
+
+
 
 if __name__ == '__main__':
     unittest.main()
