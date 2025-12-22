@@ -116,17 +116,30 @@ def embed_imgs(html_content: str, attachments: dict) -> str:
 
 def decode_to_str(bytes_content: bytes, content_charset: str) -> str:
     """Smart decode unicode bytes to str."""
-    logger.debug(f'bytes: {str(bytes_content)}')
-    logger.debug(f'charset: {content_charset}')
+    decoded = "" 
+    
     if isinstance(bytes_content, bytes):
-        decoded = bytes_content.decode(content_charset)
-        logger.debug(f'decoded: {decoded}')
+        logger.debug(f'bytes: {str(bytes_content)[:100]}...')
+        logger.debug(f'charset: {content_charset}')
+        
+        try:
+            # Attempt strict decoding
+            decoded = bytes_content.decode(content_charset)
+        except (UnicodeDecodeError, LookupError):
+            # Fallback for binary data/mismatched charsets
+            logger.warning(f"Strict decode failed for {content_charset}. Using 'replace' mode.")
+            decoded = bytes_content.decode(content_charset, errors='replace')
+
+        # Handle unicode escape patterns (e.g., \u00a0)
         unicode_escape_pattern = r'\\u[0-9a-fA-F]{4}|\\U[0-9a-fA-F]{8}'
-        if re.search(unicode_escape_pattern, decoded):
-            decoded = decoded.encode('utf-8').decode('unicode-escape')
-            logger.debug(f'unicode escaped decoded : {decoded}')
-    else:
-        decoded = 'Decoding error!'
+        try:
+            if re.search(unicode_escape_pattern, decoded):
+                decoded = decoded.encode('utf-8').decode('unicode-escape')
+                logger.debug(f'unicode escaped decoded : {decoded[:100]}...')
+        except Exception as e:
+            # If escape decoding fails (common in binary noise), keep the 'replace' version
+            logger.debug(f"Unicode escape decoding skipped: {e}")
+            
     return decoded
 
 
@@ -164,29 +177,46 @@ def walk_eml(msg: email.message.Message, eml_path: Path) -> \
         if not payload:
             continue
 
-        payload = bytes(payload)
-        if ((content_type == 'text/plain' or content_type == 'text/html')
-                and not content_disposition):
+        # Ensure payload is bytes (safety check)
+        if not isinstance(payload, bytes):
+            continue
+
+        # We allow 'inline' here to capture text bodies marked as inline
+        if (content_type == 'text/plain' or content_type == 'text/html') and \
+           (content_disposition is None or content_disposition == 'inline'):
+            
             decoded_payload = decode_to_str(payload, content_charset)
-            if decoded_payload == 'Decoding error!':
-                logger.error(f"{eml_path} not decoded correctly.")
+            
             if content_type == 'text/plain':
                 plain_text_content += decoded_payload
             elif content_type == "text/html":
                 html_content += decoded_payload
-        elif (content_disposition == 'attachment' or
+
+        # Handle Attachments AND Inline Files
+        elif (content_disposition == 'attachment' or 
               content_disposition == 'inline'):
+            
             filename = part.get_filename()
-            # Do stuff to save all attachments.
-            if content_disposition == 'attachment' and filename:
+            is_image = content_type.startswith('image/')
+
+            # Save as attachment if it is:
+            # 1. Marked 'attachment' OR
+            # 2. Marked 'inline' BUT is not an image (like your .doc file)
+            should_save_as_attachment = (
+                content_disposition == 'attachment' or 
+                (content_disposition == 'inline' and not is_image)
+            )
+
+            if should_save_as_attachment and filename:
                 filename = header_to_html(filename)
                 filesize = sys.getsizeof(payload)
                 _hash = hashlib.md5()
                 _hash.update(payload)
                 attachments.append(Attachment(name=filename, size=filesize,
                                               md5sum=_hash.hexdigest()))
-            if content_type.startswith('image/'):
-                # Only extract attached or inline images.
+            
+            # Handle Inline Images (rendering)
+            if is_image:
                 cid = part.get('Content-ID')
 
                 # Store attachments by CID or filename
