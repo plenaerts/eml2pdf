@@ -13,17 +13,13 @@ https://github.com/JazzCore/python-pdfkit?tab=readme-ov-file#deprecation-warning
 Should run on Linux distributions with Pango and Python and macOS. The Pango
 dependency is a challenge on Windows at the moment.
 
-This software is in beta state. There are some unit tests, I use it in my own
-workflow, but we need some actual users/downloads, basics for translations and
-Debian packaging files to proceed to a 1.0 release.
-
 ## Features
 
 - Converts email body plain from HTML or plain text message body.
 - Tries to filter potential **security or privacy** issues.
 - Preserves formatting, character encodings, embedded images.
-- Generates a header section with email metadata From, To, Subject, Date and, if
-  any, a list of attachments with size and md5sum.
+- Generates a header section with email metadata From, To, Subject, Date.
+- Generates a list of attachments with size and md5sum.
 
 ## Dependencies
 
@@ -174,6 +170,13 @@ the world.**
 eml2pdf was originally forked from [klokie/eml-to-pdf](
 https://github.com/klokie/eml-to-pdf) by [Daniel Grossfeld](
 https://github.com/klokie/).
+
+### Contributors
+
+- Inline non-image attachments - [omusale](https://github.com/omusale)
+
+If you want to work on eml2pdf, read [DEVELOPMENT.md](DEVELOPMENT.md). PR's
+welcome ;-).
 
 ## License
 

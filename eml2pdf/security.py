@@ -4,7 +4,44 @@ from bs4 import BeautifulSoup
 
 
 def sanitize_html(html_content):
-    """Remove a number of potential privacy and security issues from html."""
+    """Remove potential privacy and security issues from HTML content.
+
+    Sanitizes HTML by removing or neutralizing dangerous elements and attributes
+    before PDF generation. This provides defense-in-depth protection against
+    various attack vectors.
+
+    Protected Against:
+        - Script execution (script, iframe, object, embed tags)
+        - Data exfiltration via forms
+        - Privacy leaks via remote resources (tracking pixels, web beacons)
+        - Cross-Site Scripting via event handlers (onclick, onload, onerror, etc.)
+        - Remote resource loading (meta redirects, external stylesheets)
+        - CSS-based tracking via url() references
+        - External link navigation
+
+    Processing Steps:
+        1. Removes risky HTML tags (script, iframe, object, embed, video, audio,
+           form, meta, link)
+        2. Removes remote images (http:// or https:// sources)
+        3. Clears style attributes containing url() references
+        4. Neutralizes external links by replacing href with '#'
+        5. Removes event handler attributes (on*) and data attributes (data-*)
+
+    Args:
+        html_content (str): The HTML content to sanitize.
+
+    Returns:
+        str: Sanitized HTML content safe for PDF rendering.
+
+    Note:
+        Only embedded images (data URIs or CID references) are preserved.
+        Remote images are completely removed to prevent tracking.
+
+    Example:
+        >>> html = '<img src="http://tracker.com/pixel.gif"><script>alert(1)</script>'
+        >>> sanitize_html(html)
+        ''
+    """
     soup = BeautifulSoup(html_content, 'html.parser')
 
     # Remove risky tags
