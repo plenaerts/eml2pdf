@@ -606,8 +606,48 @@ def generate_attachment_list(attachments: list[Attachment]) -> str:
     return html
 
 
-def process_eml(eml_path: Path, output_dir: Path, page: str = 'a4',
-                debug_html: bool = False, unsafe: bool = False):
+def process_eml(
+    eml_path: Path,
+    output_dir: Path,
+    page: str = 'a4',
+    debug_html: bool = False,
+    unsafe: bool = False,
+):
+    _process_eml(
+        eml_path=eml_path,
+        output_dir=output_dir,
+        page=page,
+        debug_html=debug_html,
+        unsafe=unsafe,
+        output_path=None,
+    )
+
+
+def process_eml_to_file(
+    eml_path: Path,
+    pdf_path: Path,
+    page: str = 'a4',
+    debug_html: bool = False,
+    unsafe: bool = False,
+):
+    _process_eml(
+        eml_path=eml_path,
+        output_dir=pdf_path.parent,
+        page=page,
+        debug_html=debug_html,
+        unsafe=unsafe,
+        output_path=pdf_path,
+    )
+
+
+def _process_eml(
+    eml_path: Path,
+    output_dir: Path,
+    page: str,
+    debug_html: bool,
+    unsafe: bool,
+    output_path: Path | None,
+):
     """Process a single EML file and generate a PDF.
 
     Complete processing pipeline for converting an email message to PDF:
@@ -632,6 +672,7 @@ def process_eml(eml_path: Path, output_dir: Path, page: str = 'a4',
         page (str, optional): PDF page size. Defaults to 'a4'.
         debug_html (bool, optional): Save HTML to disk for debugging. Defaults to False.
         unsafe (bool, optional): Skip HTML sanitization. Defaults to False.
+        output_path (Path, optional): Path where PDF will be saved, takes precendence over output_dir.
 
     Note:
         If no text content is found, the file is skipped and a warning is logged.
@@ -659,7 +700,7 @@ def process_eml(eml_path: Path, output_dir: Path, page: str = 'a4',
 {html_content}
 """
 
-        output_path = get_output_base_path(email_header.date,
+        output_path = output_path or get_output_base_path(email_header.date,
                                            email_header.subject,
                                            output_dir)
         generate_pdf(html_content, output_path, eml_path,
