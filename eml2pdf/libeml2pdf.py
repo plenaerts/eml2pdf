@@ -213,7 +213,7 @@ def embed_imgs(html_content: str, attachments: dict) -> str:
     return html_content
 
 
-def decode_to_str(bytes_content: bytes, content_charset: str) -> str:
+def decode_to_str(bytes_content: bytes, content_charset: str, is_8bit_cte: bool) -> str:
     """Robustly decode bytes to string with fallback handling.
 
     Implements a multi-stage decoding strategy to handle various email content
@@ -234,6 +234,7 @@ def decode_to_str(bytes_content: bytes, content_charset: str) -> str:
     Args:
         bytes_content (bytes): The raw byte content to decode.
         content_charset (str): The character encoding name (e.g., 'utf-8', 'iso-8859-1').
+        is_8bit_cte (bool): Whether the message uses 8-bit Content-Transfer-Encoding.
 
     Returns:
         str: Decoded string content. May contain replacement characters (�) if
@@ -254,6 +255,17 @@ def decode_to_str(bytes_content: bytes, content_charset: str) -> str:
     if isinstance(bytes_content, bytes):
         logger.debug(f'bytes: {str(bytes_content)[:100]}...')
         logger.debug(f'charset: {content_charset}')
+
+        # workaround for CPython's incorrect handling of native utf-8 with 8-bit CTE
+        # https://bugs.python.org/issue18271
+        # https://github.com/python/cpython/issues/105285
+        # https://github.com/python/cpython/pull/105306
+        if is_8bit_cte:
+            try:
+                decoded = bytes_content.decode('raw-unicode-escape', errors='strict')
+                bytes_content = decoded.encode()
+            except UnicodeDecodeError, UnicodeEncodeError:
+                pass
         
         try:
             # Attempt strict decoding
@@ -349,7 +361,7 @@ def walk_eml(msg: email.message.Message, eml_path: Path) -> \
         if (content_type == 'text/plain' or content_type == 'text/html') and \
            (content_disposition is None or content_disposition == 'inline'):
             
-            decoded_payload = decode_to_str(payload, content_charset)
+            decoded_payload = decode_to_str(payload, content_charset, is_8bit_cte=_is_8bit_cte(part))
             
             if content_type == 'text/plain':
                 plain_text_content += decoded_payload
@@ -726,3 +738,14 @@ def process_all_emls(input_dir: Path, output_dir: Path, number_of_procs: int,
             p.starmap(process_eml, p_args)
 
     print("All .eml files processed.")
+
+
+def _is_8bit_cte(message: email.message.Message) -> bool:
+    """whether the message uses 8-bit Content-Transfer-Encoding"""
+    cte = message.get('content-transfer-encoding', '')
+    if hasattr(cte, 'cte'):
+        cte = cte.cte
+    else:
+        # cte might be a Header, so for now stringify it.
+        cte = str(cte).strip().lower()
+    return cte == '8bit'

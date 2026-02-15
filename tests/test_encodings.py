@@ -73,13 +73,15 @@ class TestEmls(unittest.TestCase):
     def test_plain_text(self):
         """Plain text file body should render as html."""
         pt_emls = [
-                ('plain_lorem_ipsum.eml',
-                 get_tgt_html(Path('plain_lorem_ipsum.html'))),
-                ('plain_text.eml',
-                 get_tgt_html(Path('plain_text.html'))),
-                ('mixed_plain_html_smiley_embedded.eml',
-                 get_tgt_html(Path('mixed_plain_html_smiley_embedded.html'))),
-                ]
+            ('plain_lorem_ipsum.eml',
+             get_tgt_html(Path('plain_lorem_ipsum.html'))),
+            ('plain_text.eml',
+             get_tgt_html(Path('plain_text.html'))),
+            ('mixed_plain_html_smiley_embedded.eml',
+             get_tgt_html(Path('mixed_plain_html_smiley_embedded.html'))),
+            ('plain_native_utf8.eml',
+             get_tgt_html(Path('plain_native_utf8.html'))),
+        ]
 
         for eml in pt_emls:
             with open(eml_path / Path(eml[0])) as f:
