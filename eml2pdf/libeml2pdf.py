@@ -59,7 +59,7 @@ class Email:
     """
     def __init__(self, msg: email.message.Message, eml_path: Path):
         self.header = Header(msg, eml_path)
-        self.html, self.attachments = walk_eml(msg, eml_path)
+        self.html, self.attachments = _walk_eml(msg, eml_path)
 
 
 class Header:
@@ -178,7 +178,7 @@ def header_to_html(header_str: str) -> str:
     return escape(headers_as_string)
 
 
-def embed_imgs(html_content: str, attachments: dict) -> str:
+def _embed_imgs(html_content: str, attachments: dict) -> str:
     """Embed inline images into HTML by replacing CID references with data URIs.
 
     Converts Content-ID (CID) references in HTML to inline data URIs,
@@ -213,7 +213,7 @@ def embed_imgs(html_content: str, attachments: dict) -> str:
     return html_content
 
 
-def decode_to_str(bytes_content: bytes, content_charset: str) -> str:
+def _decode_to_str(bytes_content: bytes, content_charset: str) -> str:
     """Robustly decode bytes to string with fallback handling.
 
     Implements a multi-stage decoding strategy to handle various email content
@@ -244,17 +244,17 @@ def decode_to_str(bytes_content: bytes, content_charset: str) -> str:
         iso-2022-jp, shift_jis
 
     Example:
-        >>> decode_to_str(b'Hello', 'utf-8')
+        >>> _decode_to_str(b'Hello', 'utf-8')
         'Hello'
-        >>> decode_to_str(b'\\xff\\xfe', 'utf-8')  # Invalid UTF-8
+        >>> _decode_to_str(b'\\xff\\xfe', 'utf-8')  # Invalid UTF-8
         '��'
     """
-    decoded = "" 
-    
+    decoded = ""
+
     if isinstance(bytes_content, bytes):
         logger.debug(f'bytes: {str(bytes_content)[:100]}...')
         logger.debug(f'charset: {content_charset}')
-        
+
         try:
             # Attempt strict decoding
             decoded = bytes_content.decode(content_charset)
@@ -272,11 +272,11 @@ def decode_to_str(bytes_content: bytes, content_charset: str) -> str:
         except Exception as e:
             # If escape decoding fails (common in binary noise), keep the 'replace' version
             logger.debug(f"Unicode escape decoding skipped: {e}")
-            
+
     return decoded
 
 
-def walk_eml(msg: email.message.Message, eml_path: Path) -> \
+def _walk_eml(msg: email.message.Message, eml_path: Path) -> \
         tuple[str, list[Attachment]]:
     """Extract and process all MIME parts from an email message.
 
@@ -293,7 +293,7 @@ def walk_eml(msg: email.message.Message, eml_path: Path) -> \
         **Text Content (plain/html)**:
             - Conditions: content_type is text/plain or text/html AND
               (content_disposition is None OR 'inline')
-            - Processing: Decode using decode_to_str() and append to content strings
+            - Processing: Decode using _decode_to_str() and append to content strings
             - Note: Multiple text parts are concatenated (handles multipart/alternative)
 
         **Attachments and Inline Files**:
@@ -348,18 +348,18 @@ def walk_eml(msg: email.message.Message, eml_path: Path) -> \
         # We allow 'inline' here to capture text bodies marked as inline
         if (content_type == 'text/plain' or content_type == 'text/html') and \
            (content_disposition is None or content_disposition == 'inline'):
-            
-            decoded_payload = decode_to_str(payload, content_charset)
-            
+
+            decoded_payload = _decode_to_str(payload, content_charset)
+
             if content_type == 'text/plain':
                 plain_text_content += decoded_payload
             elif content_type == "text/html":
                 html_content += decoded_payload
 
         # Handle Attachments AND Inline Files
-        elif (content_disposition == 'attachment' or 
+        elif (content_disposition == 'attachment' or
               content_disposition == 'inline'):
-            
+
             filename = part.get_filename()
             is_image = content_type.startswith('image/')
 
@@ -367,7 +367,7 @@ def walk_eml(msg: email.message.Message, eml_path: Path) -> \
             # 1. Marked 'attachment' OR
             # 2. Marked 'inline' BUT is not an image (like your .doc file)
             should_save_as_attachment = (
-                content_disposition == 'attachment' or 
+                content_disposition == 'attachment' or
                 (content_disposition == 'inline' and not is_image)
             )
 
@@ -378,7 +378,7 @@ def walk_eml(msg: email.message.Message, eml_path: Path) -> \
                 _hash.update(payload)
                 attachments.append(Attachment(name=filename, size=filesize,
                                               md5sum=_hash.hexdigest()))
-            
+
             # Handle Inline Images (rendering)
             if is_image:
                 cid = part.get('Content-ID')
@@ -392,12 +392,12 @@ def walk_eml(msg: email.message.Message, eml_path: Path) -> \
                         'content_type': content_type
                     }
 
-    html_content = embed_imgs(html_content, cid_attachments) \
+    html_content = _embed_imgs(html_content, cid_attachments) \
         if html_content else markdown(plain_text_content)
     return (html_content, attachments)
 
 
-def get_output_base_path(date: datetime.datetime | None,
+def _get_output_base_path(date: datetime.datetime | None,
                          subject: str, output_dir: Path) -> Path:
     """Generate output PDF filename from email metadata.
 
@@ -421,7 +421,7 @@ def get_output_base_path(date: datetime.datetime | None,
         to handle filename conflicts.
 
     Example:
-        >>> get_output_base_path(datetime(2024, 1, 15), "Meeting Notes", Path("/out"))
+        >>> _get_output_base_path(datetime(2024, 1, 15), "Meeting Notes", Path("/out"))
         Path('/out/2024-01-15-Meeting_Notes.pdf')
     """
     # Format date for filename prefix
@@ -440,7 +440,7 @@ def get_output_base_path(date: datetime.datetime | None,
     return output_path
 
 
-def get_exclusive_outfile(outfile_path: Path) -> BufferedWriter:
+def _get_exclusive_outfile(outfile_path: Path) -> BufferedWriter:
     """Open output file exclusively with automatic conflict resolution.
 
     Attempts to open the file with exclusive creation ('xb' mode). If the file
@@ -465,7 +465,7 @@ def get_exclusive_outfile(outfile_path: Path) -> BufferedWriter:
 
     Example:
         If "report.pdf" exists:
-        >>> get_exclusive_outfile(Path("report.pdf"))
+        >>> _get_exclusive_outfile(Path("report.pdf"))
         <_io.BufferedWriter name='report_1.pdf'>
     """
     try:
@@ -530,7 +530,7 @@ def generate_pdf(html_content: str, outfile_path: Path, infile: Path,
         html = HTML(string=html_content)
         css = CSS(string=f'@page {{ size: {page}; margin: 1cm }}')
 
-        outfile = get_exclusive_outfile(outfile_path)
+        outfile = _get_exclusive_outfile(outfile_path)
 
         html.write_pdf(outfile, presentational_hints=True,
                        stylesheets=[css])
@@ -539,7 +539,7 @@ def generate_pdf(html_content: str, outfile_path: Path, infile: Path,
         logger.error(f"Failed to convert {infile}: {str(e)}")
 
 
-def get_filepaths(input_dir: Path) -> list[Path]:
+def _get_filepaths(input_dir: Path) -> list[Path]:
     """Find all EML files in directory with case-insensitive matching.
 
     Searches for files matching *.eml pattern (case-insensitive) in the input
@@ -570,7 +570,7 @@ def get_filepaths(input_dir: Path) -> list[Path]:
     return filepaths
 
 
-def generate_attachment_list(attachments: list[Attachment]) -> str:
+def _generate_attachment_list(attachments: list[Attachment]) -> str:
     """Generate HTML table summarizing email attachments.
 
     Creates an HTML table with columns for attachment name, human-readable size,
@@ -643,8 +643,8 @@ def process_eml(eml_path: Path, output_dir: Path, page: str = 'a4',
         msg = email.message_from_file(f)
 
     email_header = Header(msg, eml_path)
-    html_content, attachments = walk_eml(msg, eml_path)
-    attachment_list = generate_attachment_list(attachments)
+    html_content, attachments = _walk_eml(msg, eml_path)
+    attachment_list = _generate_attachment_list(attachments)
 
     # Convert to PDF if HTML content is found
     if html_content:
@@ -659,7 +659,7 @@ def process_eml(eml_path: Path, output_dir: Path, page: str = 'a4',
 {html_content}
 """
 
-        output_path = get_output_base_path(email_header.date,
+        output_path = _get_output_base_path(email_header.date,
                                            email_header.subject,
                                            output_dir)
         generate_pdf(html_content, output_path, eml_path,
@@ -711,7 +711,7 @@ def process_all_emls(input_dir: Path, output_dir: Path, number_of_procs: int,
         sys.exit(1)
 
     # Process all .eml files in input directory
-    eml_file_paths = get_filepaths(input_dir)
+    eml_file_paths = _get_filepaths(input_dir)
     # Don't use multiprocessing if n is 1 or we output debug logging.
     # We output a lot of long debug messages. That's not multiprocess safe.
     # Messages would get garbled.

@@ -28,13 +28,13 @@ class ExclusiveFileTestCase(unittest.TestCase):
         """An existing file should get an increment."""
         test_base_path = test_dir / Path('testfile.pdf')
         target_file_path = test_dir / Path('testfile_3.pdf')
-        outfile = libeml2pdf.get_exclusive_outfile(test_base_path)
+        outfile = libeml2pdf._get_exclusive_outfile(test_base_path)
         outfile.close()
         self.assertTrue(outfile.name == str(target_file_path))
 
     def test_needs_no_increment(self):
         """A non existing file should NOT get an increment."""
         test_base_path = test_dir / Path('testfile_unique.pdf')
-        outfile = libeml2pdf.get_exclusive_outfile(test_base_path)
+        outfile = libeml2pdf._get_exclusive_outfile(test_base_path)
         outfile.close()
         self.assertTrue(outfile.name == str(test_base_path))
