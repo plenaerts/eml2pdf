@@ -213,7 +213,8 @@ def _embed_imgs(html_content: str, attachments: dict) -> str:
     return html_content
 
 
-def _decode_to_str(bytes_content: bytes, content_charset: str) -> str:
+def _decode_to_str(bytes_content: bytes, content_charset: str,
+                   content_transfer_encoding: str) -> str:
     """Robustly decode bytes to string with fallback handling.
 
     Implements a multi-stage decoding strategy to handle various email content
@@ -234,19 +235,18 @@ def _decode_to_str(bytes_content: bytes, content_charset: str) -> str:
     Args:
         bytes_content (bytes): The raw byte content to decode.
         content_charset (str): The character encoding name (e.g., 'utf-8', 'iso-8859-1').
+        content_transfer_encoding (str): The content transfer encoding (e.g.,
+            '8bit', 'binary'). Others may pop up:
+            https://www.w3.org/Protocols/rfc1341/5_Content-Transfer-Encoding.html
 
     Returns:
         str: Decoded string content. May contain replacement characters (�) if
             original bytes were invalid for the specified encoding.
 
-    Note:
-        Common charsets: utf-8, iso-8859-1, windows-1252, us-ascii, gb2312, big5,
-        iso-2022-jp, shift_jis
-
     Example:
-        >>> _decode_to_str(b'Hello', 'utf-8')
+        >>> _decode_to_str(b'Hello', 'utf-8', 'binary')
         'Hello'
-        >>> _decode_to_str(b'\\xff\\xfe', 'utf-8')  # Invalid UTF-8
+        >>> _decode_to_str(b'\\xff\\xfe', 'utf-8', ')  # Invalid UTF-8
         '��'
     """
     decoded = ""
@@ -255,6 +255,16 @@ def _decode_to_str(bytes_content: bytes, content_charset: str) -> str:
         logger.debug(f'bytes: {str(bytes_content)[:100]}...')
         logger.debug(f'charset: {content_charset}')
 
+        # workaround for CPython's incorrect handling of native utf-8 with 8-bit CTE
+        # https://bugs.python.org/issue18271
+        # https://github.com/python/cpython/issues/105285
+        # https://github.com/python/cpython/pull/105306
+        if content_transfer_encoding == '8bit':
+            try:
+                decoded = bytes_content.decode('raw-unicode-escape', errors='strict')
+                bytes_content = decoded.encode()
+            except (UnicodeDecodeError, UnicodeEncodeError):
+                pass
         try:
             # Attempt strict decoding
             decoded = bytes_content.decode(content_charset)
@@ -349,7 +359,8 @@ def _walk_eml(msg: email.message.Message, eml_path: Path) -> \
         if (content_type == 'text/plain' or content_type == 'text/html') and \
            (content_disposition is None or content_disposition == 'inline'):
 
-            decoded_payload = _decode_to_str(payload, content_charset)
+            decoded_payload = _decode_to_str(payload, content_charset,
+                                             content_transfer_encoding=_get_cte(part))
 
             if content_type == 'text/plain':
                 plain_text_content += decoded_payload
@@ -606,6 +617,24 @@ def _generate_attachment_list(attachments: list[Attachment]) -> str:
     return html
 
 
+def _get_cte(message: email.message.Message) -> str:
+    """Return the message part Content-Transfer-Encoding
+
+    Args:
+        message: (email.message.Message): Email message part to return the
+            Content-Transer-Encoding for
+
+    Returns (str): the email message part CTE
+    """
+    cte = message.get('content-transfer-encoding', '')
+    if hasattr(cte, 'cte'):
+        cte = cte.cte
+    else:
+        # cte might be a Header, so for now stringify it.
+        cte = str(cte).strip().lower()
+    return cte
+
+
 def process_eml(eml_path: Path, output_dir: Path, page: str = 'a4',
                 debug_html: bool = False, unsafe: bool = False):
     """Process a single EML file and generate a PDF.
@@ -640,7 +669,11 @@ def process_eml(eml_path: Path, output_dir: Path, page: str = 'a4',
     logging.info(f'Processing {eml_path}')
     # Open and parse the .eml file
     with open(eml_path, "r") as f:
-        msg = email.message_from_file(f)
+        try:
+            msg = email.message_from_file(f)
+        except UnicodeDecodeError as e:
+            logging.error(f'Error processing {eml_path}')
+            raise e
 
     email_header = Header(msg, eml_path)
     html_content, attachments = _walk_eml(msg, eml_path)
