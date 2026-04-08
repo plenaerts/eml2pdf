@@ -8,6 +8,9 @@ from . import libeml2pdf
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
+libeml2pdf_logger = logging.getLogger('eml2pdf.libeml2pdf')
+
+loggers = [logger, libeml2pdf_logger]
 
 
 def get_args() -> argparse.Namespace:
@@ -80,15 +83,19 @@ def main():
                        'information.')
 
     if args.verbose:
-        logger.setLevel(logging.DEBUG)
+        new_log_level = logging.DEBUG
+    else:
+        new_log_level = logging.INFO
+
+    for l in loggers: l.setLevel(new_log_level)
 
     if 'input_file' in args:
-        raise NotImplementedError('WIP - convert_file is not implemented '
-                                     'yet.')
+        libeml2pdf.process_eml(args.input_file, args.output_file, args.page,
+                               args.debug_html, args.unsafe)
     elif 'input_dir' in args:
         libeml2pdf.process_all_emls(args.input_dir, args.output_dir,
-                                    args.number_of_procs, args.verbose,
-                                    args.debug_html, args.page, args.unsafe)
+                                    args.number_of_procs, args.debug_html,
+                                    args.page, args.unsafe)
     else:
         raise ValueError(f'Could not process arguments: {sys.argv}')
 

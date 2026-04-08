@@ -16,6 +16,7 @@ class ExclusiveFileTestCase(unittest.TestCase):
         f = open(test_dir / Path(f'{basename}.pdf'), 'x')
         f.close()
         for i in range(1, 3):
+            # Remember range(1,3) does not contain 3 ;-)
             p = test_dir / Path(f'{basename}_{i}.pdf')
             f = p.open('x')
             f.close()

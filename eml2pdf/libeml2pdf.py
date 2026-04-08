@@ -481,7 +481,8 @@ def _get_exclusive_outfile(outfile_path: Path) -> BufferedWriter:
     """
     try:
         outfile = open(outfile_path, 'xb')
-    except OSError:
+    except OSError as e:
+        logger.debug(f'Could not open {outfile_path} exclusively. {e}')
         outfile = open(os.devnull, 'wb')
         outfile.close()  # We won't use devnull.
 
@@ -491,7 +492,8 @@ def _get_exclusive_outfile(outfile_path: Path) -> BufferedWriter:
             Path(f"{outfile_path.stem}_{counter}{outfile_path.suffix}")
         try:
             outfile = open(new_outfile_path, 'xb')
-        except OSError:
+        except OSError as e:
+            logger.debug(f'Could not open {outfile_path} exclusively. {e}')
             counter += 1
     return outfile
 
@@ -635,16 +637,16 @@ def _get_cte(message: email.message.Message) -> str:
     return cte
 
 
-def process_eml(eml_path: Path, output_dir: Path, page: str = 'a4',
+def process_eml(eml_path: Path, output_path: Path, page: str = 'a4',
                 debug_html: bool = False, unsafe: bool = False):
     """Process a single EML file and generate a PDF.
 
-    Complete processing pipeline for converting an email message to PDF:
     1. Parse EML file with email.message_from_file()
     2. Extract header (from/to/subject/date)
     3. Walk message parts to extract content and attachments
     4. Generate attachment list table
-    5. Assemble complete HTML with UTF-8 meta tags, header, attachments, and body
+    5. Assemble complete HTML with UTF-8 meta tags, header, attachments, and
+       body
     6. Generate output filename from date and subject
     7. Convert to PDF (with sanitization unless unsafe=True)
 
@@ -653,26 +655,30 @@ def process_eml(eml_path: Path, output_dir: Path, page: str = 'a4',
         - Email header table (from/to/date/subject)
         - Attachment list table
         - Horizontal rule separator
-        - Email body content (with embedded images)
+        - Email body content with embedded images
 
     Args:
         eml_path (Path): Path to the EML file to process.
-        output_dir (Path): Directory where PDF will be saved.
+        output_path (Path): Path where PDF will be saved. If this is a dir then
+          an output filename will be derived from the email content. If this
+          is a file then output_path is taken as filename.
         page (str, optional): PDF page size. Defaults to 'a4'.
-        debug_html (bool, optional): Save HTML to disk for debugging. Defaults to False.
+        debug_html (bool, optional): Save HTML to disk for debugging.
+          Defaults to False.
         unsafe (bool, optional): Skip HTML sanitization. Defaults to False.
 
     Note:
-        If no text content is found, the file is skipped and a warning is logged.
+        If no text content is found, the file is skipped and a warning is
+        logged.
         Output filename format: {date}-{subject}.pdf
     """
-    logging.info(f'Processing {eml_path}')
+    logger.info(f'Processing {eml_path}')
     # Open and parse the .eml file
     with open(eml_path, "r") as f:
         try:
             msg = email.message_from_file(f)
         except UnicodeDecodeError as e:
-            logging.error(f'Error processing {eml_path}')
+            logger.error(f'Error processing {eml_path}')
             raise e
 
     email_header = Header(msg, eml_path)
@@ -692,9 +698,10 @@ def process_eml(eml_path: Path, output_dir: Path, page: str = 'a4',
 {html_content}
 """
 
-        output_path = _get_output_base_path(email_header.date,
-                                           email_header.subject,
-                                           output_dir)
+        if output_path.is_dir():
+            output_path = _get_output_base_path(email_header.date,
+                                                email_header.subject,
+                                                output_path)
         generate_pdf(html_content, output_path, eml_path,
                      debug_html=debug_html, page=page, unsafe=unsafe)
     else:
@@ -703,7 +710,7 @@ def process_eml(eml_path: Path, output_dir: Path, page: str = 'a4',
 
 
 def process_all_emls(input_dir: Path, output_dir: Path, number_of_procs: int,
-                     verbose: bool, debug_html: bool, page: str, unsafe: bool):
+                     debug_html: bool, page: str, unsafe: bool):
     """Process all EML files in a directory to PDFs with optional multiprocessing.
 
     Main entry point for batch processing of email files. Handles directory
@@ -712,7 +719,6 @@ def process_all_emls(input_dir: Path, output_dir: Path, number_of_procs: int,
     Multiprocessing Conditions:
         Parallel processing is used when ALL of these are true:
         - number_of_procs > 1
-        - verbose is False
         - logger level is not DEBUG
 
     Reason for Limitations:
@@ -723,7 +729,6 @@ def process_all_emls(input_dir: Path, output_dir: Path, number_of_procs: int,
         input_dir (Path): Directory containing EML files to process.
         output_dir (Path): Directory where PDFs will be saved (created if needed).
         number_of_procs (int): Number of parallel processes. Use 1 for sequential.
-        verbose (bool): Enable verbose/debug logging.
         debug_html (bool): Save intermediate HTML files for debugging.
         page (str): PDF page size (e.g., 'a4', 'letter').
         unsafe (bool): Skip HTML sanitization (use only with trusted sources).
@@ -733,8 +738,6 @@ def process_all_emls(input_dir: Path, output_dir: Path, number_of_procs: int,
         Exits with code 1 if output directory cannot be created.
         Uses Python's multiprocessing.Pool for parallel processing.
     """
-    if verbose:
-        logger.level = logging.DEBUG
 
     # Create output directory if it doesn't exist
     try:
@@ -748,8 +751,7 @@ def process_all_emls(input_dir: Path, output_dir: Path, number_of_procs: int,
     # Don't use multiprocessing if n is 1 or we output debug logging.
     # We output a lot of long debug messages. That's not multiprocess safe.
     # Messages would get garbled.
-    if number_of_procs == 1 or verbose or \
-            logger.level == logging.DEBUG:
+    if number_of_procs == 1 or logger.level == logging.DEBUG:
         for ep in eml_file_paths:
             process_eml(ep, Path(output_dir), page, debug_html, unsafe)
     else:
