@@ -94,6 +94,7 @@ def main():
         new_log_level = logging.INFO
 
     for l in loggers: l.setLevel(new_log_level)
+    logger.debug(f'Registered loggers: {logging.root.manager.loggerDict}')
 
     if 'input_file' in args:
         libeml2pdf.process_eml(args.input_file, args.output_file, args.page,

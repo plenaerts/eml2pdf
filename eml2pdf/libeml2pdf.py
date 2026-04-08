@@ -535,14 +535,18 @@ def generate_pdf(html_content: str, outfile_path: Path, infile: Path,
 
     # Weasyprint is extremely chatty with warnings. We'll tune it own a bit.
     wp_logger = logging.getLogger('weasyprint')
-    if (logger.level in [logging.DEBUG]):
-        new_wp_loglevel = logging.WARNING
-    elif (logger.level in [logging.INFO, logging.WARNING, logging.ERROR]):
-        new_wp_loglevel = logging.ERROR
+    ft_logger = logging.getLogger('fontTools')
+    if (logger.level == logging.DEBUG):
+        quiet_loglevel = logging.WARNING
+    elif (logger.level in [logging.INFO, logging.WARNING]):
+        quiet_loglevel = logging.ERROR
+    elif (logger.level == logging.ERROR):
+        quiet_loglevel = logging.ERROR + 10 # This means wp will shut up!
     else:
         raise ValueError('Logger contains an unexpected level: '
                          f'{logger.level}')
-    wp_logger.setLevel(new_wp_loglevel)
+    for l in [wp_logger, ft_logger]:
+        l.setLevel(quiet_loglevel)
 
     if not unsafe:
         html_content = security.sanitize_html(html_content)
@@ -559,7 +563,7 @@ def generate_pdf(html_content: str, outfile_path: Path, infile: Path,
 
         html.write_pdf(outfile, presentational_hints=True,
                        stylesheets=[css])
-        print(f"Converted {infile} to PDF successfully.")
+        logger.info(f"Converted {infile} to PDF successfully.")
     except Exception as e:
         logger.error(f"Failed to convert {infile}: {str(e)}")
 
