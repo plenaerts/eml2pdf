@@ -40,6 +40,8 @@ def get_args() -> argparse.Namespace:
     parent_parser.add_argument('-v', '--verbose', action='store_true',
                         help='Show a lot of verbose debugging info. Forces '
                         'number of procs to 1.')
+    parent_parser.add_argument('-q', '--quiet', action='store_true',
+                        help='Show only errors.')
 
 
     subparsers = parser.add_subparsers(required=True,
@@ -84,7 +86,11 @@ def main():
 
     if args.verbose:
         new_log_level = logging.DEBUG
-    else:
+        if args.quiet:
+            logging.warning('Overriding --quiet with --verbose.')
+    elif args.quiet:
+        new_log_level = logging.ERROR
+    else: # verbose and quiet both false = normal output
         new_log_level = logging.INFO
 
     for l in loggers: l.setLevel(new_log_level)
@@ -93,9 +99,10 @@ def main():
         libeml2pdf.process_eml(args.input_file, args.output_file, args.page,
                                args.debug_html, args.unsafe)
     elif 'input_dir' in args:
-        libeml2pdf.process_all_emls(args.input_dir, args.output_dir,
-                                    args.number_of_procs, args.debug_html,
-                                    args.page, args.unsafe)
+        libeml2pdf.process_all_emls_in_dir(args.input_dir, args.output_dir,
+                                           args.number_of_procs,
+                                           args.debug_html, args.page,
+                                           args.unsafe)
     else:
         raise ValueError(f'Could not process arguments: {sys.argv}')
 

@@ -99,6 +99,22 @@ class TestGetArgs(unittest.TestCase):
             args = get_args()
             self.assertFalse(args.verbose)
 
+    def test_convert_dir_quiet_flag(self):
+        """Test -q/--quiet flag."""
+        with patch('sys.argv', ['eml2pdf', 'convert_dir', 'input', 'output', '-q']):
+            args = get_args()
+            self.assertTrue(args.quiet)
+
+        with patch('sys.argv', ['eml2pdf', 'convert_dir', 'input', 'output', '--quiet']):
+            args = get_args()
+            self.assertTrue(args.quiet)
+
+    def test_convert_dir_quiet_default(self):
+        """Test quiet defaults to False."""
+        with patch('sys.argv', ['eml2pdf', 'convert_dir', 'input', 'output']):
+            args = get_args()
+            self.assertFalse(args.quiet)
+
     def test_convert_dir_combined_flags(self):
         """Test multiple flags can be combined."""
         with patch('sys.argv', ['eml2pdf', 'convert_dir', 'input', 'output', '-d', '-v', '--unsafe', '-n', '2', '-p', 'letter']):
@@ -108,6 +124,7 @@ class TestGetArgs(unittest.TestCase):
             self.assertTrue(args.unsafe)
             self.assertEqual(args.number_of_procs, 2)
             self.assertEqual(args.page, 'letter')
+            self.assertFalse(args.quiet)
 
     def test_convert_file_basic_arguments(self):
         """Test parsing of required input_file and output_file arguments for convert_file."""
@@ -176,6 +193,22 @@ class TestGetArgs(unittest.TestCase):
             args = get_args()
             self.assertFalse(args.verbose)
 
+    def test_convert_file_quiet_flag(self):
+        """Test -q/--quiet flag for convert_file."""
+        with patch('sys.argv', ['eml2pdf', 'convert_file', 'input.eml', 'output.pdf', '-q']):
+            args = get_args()
+            self.assertTrue(args.quiet)
+
+        with patch('sys.argv', ['eml2pdf', 'convert_file', 'input.eml', 'output.pdf', '--quiet']):
+            args = get_args()
+            self.assertTrue(args.quiet)
+
+    def test_convert_file_quiet_default(self):
+        """Test quiet defaults to False for convert_file."""
+        with patch('sys.argv', ['eml2pdf', 'convert_file', 'input.eml', 'output.pdf']):
+            args = get_args()
+            self.assertFalse(args.quiet)
+
     def test_convert_file_combined_flags(self):
         """Test multiple flags can be combined for convert_file."""
         with patch('sys.argv', ['eml2pdf', 'convert_file', 'input.eml', 'output.pdf', '-d', '-v', '--unsafe', '-p', 'letter']):
@@ -184,6 +217,7 @@ class TestGetArgs(unittest.TestCase):
             self.assertTrue(args.verbose)
             self.assertTrue(args.unsafe)
             self.assertEqual(args.page, 'letter')
+            self.assertFalse(args.quiet)
 
 
 class TestMain(unittest.TestCase):
@@ -192,7 +226,7 @@ class TestMain(unittest.TestCase):
     This just tests that main passes args correctly for some basic cases.
     """
 
-    @patch('eml2pdf.eml2pdf.libeml2pdf.process_all_emls')
+    @patch('eml2pdf.eml2pdf.libeml2pdf.process_all_emls_in_dir')
     def test_main_convert_dir_basic(self, mock_process):
         """Test main() calls process_all_emls with correct arguments."""
         with patch('sys.argv', ['eml2pdf', 'convert_dir', 'input', 'output']):

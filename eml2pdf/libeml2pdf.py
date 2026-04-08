@@ -532,6 +532,18 @@ def generate_pdf(html_content: str, outfile_path: Path, infile: Path,
     Raises:
         Exception: Logs error if PDF generation fails, but does not re-raise.
     """
+
+    # Weasyprint is extremely chatty with warnings. We'll tune it own a bit.
+    wp_logger = logging.getLogger('weasyprint')
+    if (logger.level in [logging.DEBUG]):
+        new_wp_loglevel = logging.WARNING
+    elif (logger.level in [logging.INFO, logging.WARNING, logging.ERROR]):
+        new_wp_loglevel = logging.ERROR
+    else:
+        raise ValueError('Logger contains an unexpected level: '
+                         f'{logger.level}')
+    wp_logger.setLevel(new_wp_loglevel)
+
     if not unsafe:
         html_content = security.sanitize_html(html_content)
     try:
@@ -709,7 +721,7 @@ def process_eml(eml_path: Path, output_path: Path, page: str = 'a4',
                        f"in {eml_path}. Skipping...")
 
 
-def process_all_emls(input_dir: Path, output_dir: Path, number_of_procs: int,
+def process_all_emls_in_dir(input_dir: Path, output_dir: Path, number_of_procs: int,
                      debug_html: bool, page: str, unsafe: bool):
     """Process all EML files in a directory to PDFs with optional multiprocessing.
 
