@@ -259,12 +259,20 @@ def _decode_to_str(bytes_content: bytes, content_charset: str,
         # https://bugs.python.org/issue18271
         # https://github.com/python/cpython/issues/105285
         # https://github.com/python/cpython/pull/105306
+        # Only apply raw-unicode-escape if UTF-8 decoding fails, to preserve UTF-8 emoji
         if content_transfer_encoding == '8bit':
             try:
-                decoded = bytes_content.decode('raw-unicode-escape', errors='strict')
-                bytes_content = decoded.encode()
-            except (UnicodeDecodeError, UnicodeEncodeError):
-                pass
+                # First try UTF-8 decoding (preserves emoji and other UTF-8 content)
+                decoded = bytes_content.decode('utf-8')
+                # If UTF-8 succeeds, we're done - skip the rest of the function
+                return decoded
+            except (UnicodeDecodeError, LookupError):
+                # If UTF-8 fails, try the original raw-unicode-escape workaround
+                try:
+                    decoded = bytes_content.decode('raw-unicode-escape', errors='strict')
+                    bytes_content = decoded.encode()
+                except (UnicodeDecodeError, UnicodeEncodeError):
+                    pass
         try:
             # Attempt strict decoding
             decoded = bytes_content.decode(content_charset)
@@ -553,7 +561,7 @@ def generate_pdf(html_content: str, outfile_path: Path, infile: Path,
     try:
         if debug_html:
             html_file = outfile_path.parent / Path(outfile_path.name + '.html')
-            of = open(html_file, 'w')
+            of = open(html_file, 'w', encoding='utf-8')
             of.write(html_content)
             of.close()
         html = HTML(string=html_content)
@@ -657,7 +665,7 @@ def process_eml(eml_path: Path, output_path: Path, page: str = 'a4',
                 debug_html: bool = False, unsafe: bool = False):
     """Process a single EML file and generate a PDF.
 
-    1. Parse EML file with email.message_from_file()
+    1. Parse EML file with email.message_from_binary_file() (fallback to message_from_file())
     2. Extract header (from/to/subject/date)
     3. Walk message parts to extract content and attachments
     4. Generate attachment list table
@@ -690,12 +698,14 @@ def process_eml(eml_path: Path, output_path: Path, page: str = 'a4',
     """
     logger.info(f'Processing {eml_path}')
     # Open and parse the .eml file
-    with open(eml_path, "r") as f:
-        try:
+    # Try binary mode first to handle various encodings (ISO-8859-1, etc.)
+    try:
+        with open(eml_path, "rb") as f:
+            msg = email.message_from_binary_file(f)
+    except UnicodeDecodeError:
+        # Fall back to text mode for UTF-8 encoded files
+        with open(eml_path, "r", encoding="utf-8") as f:
             msg = email.message_from_file(f)
-        except UnicodeDecodeError as e:
-            logger.error(f'Error processing {eml_path}')
-            raise e
 
     email_header = Header(msg, eml_path)
     html_content, attachments = _walk_eml(msg, eml_path)
