@@ -735,8 +735,10 @@ def process_eml(eml_path: Path, output_path: Path, page: str = 'a4',
                        f"in {eml_path}. Skipping...")
 
 
-def process_all_emls_in_dir(input_dir: Path, output_dir: Path, number_of_procs: int,
-                     debug_html: bool, page: str, unsafe: bool):
+def process_all_emls_in_dir(input_dir: Path, output_dir: Path,
+                            number_of_procs: int = 1,
+                            debug_html: bool = False,
+                            page: str = 'a4', unsafe: bool = False):
     """Process all EML files in a directory to PDFs with optional multiprocessing.
 
     Main entry point for batch processing of email files. Handles directory
@@ -754,10 +756,13 @@ def process_all_emls_in_dir(input_dir: Path, output_dir: Path, number_of_procs: 
     Args:
         input_dir (Path): Directory containing EML files to process.
         output_dir (Path): Directory where PDFs will be saved (created if needed).
-        number_of_procs (int): Number of parallel processes. Use 1 for sequential.
-        debug_html (bool): Save intermediate HTML files for debugging.
-        page (str): PDF page size (e.g., 'a4', 'letter').
+        number_of_procs (int): Number of parallel processes. Use 1 for
+                               sequential. Defaults to 1.
+        debug_html (bool): Save intermediate HTML files for debugging. Defaults
+                           to False.
+        page (str): PDF page size (e.g., 'a4', 'letter'). Defaults to 'a4'
         unsafe (bool): Skip HTML sanitization (use only with trusted sources).
+                       Defaults to False.
 
     Note:
         Creates output_dir with parents if it doesn't exist.
