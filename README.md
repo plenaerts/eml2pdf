@@ -51,8 +51,10 @@ to install weasyprint using your system's package manager.
 Users of Arch linux or derived distro's like Manjora can use AUR package
 [eml2pdf](https://aur.archlinux.org/packages/eml2pdf).
 
-Check [INSTALL.md on Github](INSTALL.md) or {ref}`install` for more detailed
-installation instructions if you need more help.
+Check [INSTALL.md on
+Github](https://github.com/plenae/eml2pdf/blob/main/INSTALL.md) or
+{ref}`install` for more detailed installation instructions if you need more
+help.
 
 ## Usage
 
@@ -227,8 +229,9 @@ https://github.com/klokie/).
 - convert_file mode and 8bit CTE with UTF-8 encoding -
   [bastidest](https://github.com/bastidest).
 
-If you want to work on eml2pdf, read [DEVELOPMENT.md on GitHub](DEVELOPMENT.md)
-or {ref}`development`. PR's welcome ;-).
+If you want to work on eml2pdf, read [DEVELOPMENT.md on
+GitHub](https://github.com/plenae/eml2pdf/blob/main/DEVELOPMENT.md) or
+{ref}`development`. PR's welcome ;-).
 
 ## License
 
