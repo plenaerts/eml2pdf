@@ -51,8 +51,8 @@ to install weasyprint using your system's package manager.
 Users of Arch linux or derived distro's like Manjora can use AUR package
 [eml2pdf](https://aur.archlinux.org/packages/eml2pdf).
 
-Check [INSTALL.md](INSTALL.md) for more detailed installation instructions if
-you need more help.
+Check [INSTALL.md on Github](INSTALL.md) or {ref}`install` for more detailed
+installation instructions if you need more help.
 
 ## Usage
 
@@ -203,7 +203,7 @@ They are not intended to be.
 ## Reporting issues
 
 We've tested eml2pdf with a couple of cases with embedded images, tables,
-unicode or specific encodings. Refer to [tests](tree/main/tests) for example
+unicode or specific encodings. Refer to [tests](https://github.com/plenaerts/eml2pdf/tree/main/tests) for example
 emails.
 
 Please open an issue ticket if you have a mail where conversion results are
@@ -227,8 +227,8 @@ https://github.com/klokie/).
 - convert_file mode and 8bit CTE with UTF-8 encoding -
   [bastidest](https://github.com/bastidest).
 
-If you want to work on eml2pdf, read [DEVELOPMENT.md](DEVELOPMENT.md). PR's
-welcome ;-).
+If you want to work on eml2pdf, read [DEVELOPMENT.md on GitHub](DEVELOPMENT.md)
+or {ref}`development`. PR's welcome ;-).
 
 ## License
 
