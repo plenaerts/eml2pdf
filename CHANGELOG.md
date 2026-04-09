@@ -1,16 +1,16 @@
 # Eml2pdf changelog
 
-## v2.0 - 2026-04-08
+## v2.0 - 2026-04-09
 
-- Breaking changes to the CLI and API:
-  - `eml2pdf` command line script now supports:
-    1) converting all eml files in a directory to pdf using subcommand
-    `convert_dir` and
-    2) converting a single eml file to a pdf file using subcommand
-    `convert_file`. Idea contributed by
-    [bastidest](https://github.com/bastidest).
-  - The API is cleaned up, functions starting with a _ are "internal".
-    Feel free to use `eml2pdf.libeml2pdf:process_eml` and others 👍
+- **Breaking changes to the CLI and API**
+- `eml2pdf` command line script now supports:
+  1) converting all eml files in a directory to pdf using subcommand
+  `convert_dir` and
+  2) converting a single eml file to a pdf file using subcommand
+  `convert_file`. Idea contributed by
+  [bastidest](https://github.com/bastidest).
+- The API is cleaned up, functions starting with a _ are "internal".
+  Feel free to use `eml2pdf.libeml2pdf:process_eml` and others 👍
 - Fix CTE 8bit with UTF-8 encoding - contributed by
   [bastidest](https://github.com/bastidest).
 - Improved logging feedback:

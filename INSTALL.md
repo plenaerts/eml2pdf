@@ -9,8 +9,8 @@ The preferred way to install packages on your system should be to use some form
 of package manager like APT for Debian GNU/Linux and derivatives or DNF for the
 Red Hat families, or the Windows Store on Microsoft Windows.
 
-eml2pdf is far from ready to be included in vetted package distributions
-such as the official Debian packages as this requires a lot of packaging work
+eml2pdf is now maybe ready to be included in vetted package distributions
+such as the official Debian packages, but that will require some packaging work
 on top of *"just delivering a working script"*.
 
 This is why we currently release eml2pdf via PyPi, the Python Package Index.
@@ -25,11 +25,11 @@ environment. Pip is the Python package installer. You can find general info on
   https://docs.python.org/3/installing/index.html).
 
 On Linux systems you should have **python3** available. On Debian you would
-need to install the python3-venv package to create and use virtual
+need to also install the python3-venv package to create and use virtual
 environments. On Windows you can [find Python on the Windows Store](
-  https://apps.microsoft.com/search?query=python&hl=nl-nl&gl=BE) and some
-help on [Python on Windows for beginners](
-  https://learn.microsoft.com/en-us/windows/python/beginners) from Microsoft.
+https://apps.microsoft.com/search?query=python&hl=nl-nl&gl=BE) and some help on
+[Python on Windows for beginners](
+https://learn.microsoft.com/en-us/windows/python/beginners) from Microsoft.
 
 Next you should create a **virtual environment** using
 `python3 -m venv <path_to_your_venv_location>`. Basically, virtual environments
@@ -39,7 +39,7 @@ polluting your Linux distribution packages. Refer to
   https://docs.python.org/3/library/venv.html#creating-virtual-environments)
 for more info on virtual environments.
 
-**Activate your venv** using `source <venv>/bin/activate` on Linux or execute
+**Activate your venv** using `source <venv>/bin/activate` on Linux. Execute
 `<venv>\Scripts\Activate.ps1` in PowerShell on Windows if you are working on
 Windows with python3 in the same environment where you have Pango available.
 Refer to information below for Windows.
@@ -58,6 +58,3 @@ Using eml2pdf on Windows should be possible, but it's not easy due to the
 Pango dependency. Refer to [weasyprint install instructions for Windows](
   https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#windows)
 and then follow the pip installation steps above.
-
-We'll try to make that easier if we get some requests for a packaged Windows
-executable.
