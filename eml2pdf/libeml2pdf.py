@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class Attachment:
+class _Attachment:
     """Attachment metadata extracted from an email message.
 
     Attributes:
@@ -38,16 +38,16 @@ class Attachment:
     md5sum: str
 
 
-class Email:
+class _Email:
     """Parsed EML file with header, attachments, and rendered HTML content.
 
     Encapsulates a complete parsed email message including metadata,
     HTML-rendered content, and attachment information.
 
     Attributes:
-        header (Header): Parsed email header with from/to/subject/date fields.
+        header (_Header): Parsed email header with from/to/subject/date fields.
         html (str): HTML-rendered email body content with embedded images.
-        attachments (list[Attachment]): List of attachment metadata.
+        attachments (list[_Attachment]): List of attachment metadata.
 
     Args:
         msg (email.message.Message): Parsed email message object.
@@ -55,14 +55,14 @@ class Email:
 
     Note:
         The constructor automatically extracts all content by calling
-        Header() and walk_eml() internally.
+        _Header() and _walk_eml() internally.
     """
     def __init__(self, msg: email.message.Message, eml_path: Path):
-        self.header = Header(msg, eml_path)
+        self.header = _Header(msg, eml_path)
         self.html, self.attachments = _walk_eml(msg, eml_path)
 
 
-class Header:
+class _Header:
     """Parsed email header data with HTML rendering.
 
     Extracts and formats email metadata from an email.message.Message object.
@@ -295,7 +295,7 @@ def _decode_to_str(bytes_content: bytes, content_charset: str,
 
 
 def _walk_eml(msg: email.message.Message, eml_path: Path) -> \
-        tuple[str, list[Attachment]]:
+        tuple[str, list[_Attachment]]:
     """Extract and process all MIME parts from an email message.
 
     Walks through all parts of a MIME multipart email message, extracting text
@@ -337,9 +337,9 @@ def _walk_eml(msg: email.message.Message, eml_path: Path) -> \
         eml_path (Path): Path to the EML file (used for logging messages).
 
     Returns:
-        tuple[str, list[Attachment]]: A tuple of (html_content, attachments) where
+        tuple[str, list[_Attachment]]: A tuple of (html_content, attachments) where
             html_content is the rendered HTML and attachments is a list of
-            Attachment objects with metadata.
+            _Attachment objects with metadata.
 
     Note:
         Skips parts with no payload or non-bytes payloads.
@@ -347,7 +347,7 @@ def _walk_eml(msg: email.message.Message, eml_path: Path) -> \
     html_content = ""
     plain_text_content = ""
     cid_attachments = {}
-    attachments: list[Attachment] = list()
+    attachments: list[_Attachment] = list()
 
     for part in msg.walk():
         content_disposition = part.get_content_disposition()
@@ -395,7 +395,7 @@ def _walk_eml(msg: email.message.Message, eml_path: Path) -> \
                 filesize = sys.getsizeof(payload)
                 _hash = hashlib.md5()
                 _hash.update(payload)
-                attachments.append(Attachment(name=filename, size=filesize,
+                attachments.append(_Attachment(name=filename, size=filesize,
                                               md5sum=_hash.hexdigest()))
 
             # Handle Inline Images (rendering)
@@ -607,14 +607,14 @@ def _get_filepaths(input_dir: Path) -> list[Path]:
     return filepaths
 
 
-def _generate_attachment_list(attachments: list[Attachment]) -> str:
+def _generate_attachment_list(attachments: list[_Attachment]) -> str:
     """Generate HTML table summarizing email attachments.
 
     Creates an HTML table with columns for attachment name, human-readable size,
     and MD5 hash for integrity verification.
 
     Args:
-        attachments (list[Attachment]): List of attachment metadata objects.
+        attachments (list[_Attachment]): List of attachment metadata objects.
 
     Returns:
         str: HTML table string, or empty string if no attachments.
