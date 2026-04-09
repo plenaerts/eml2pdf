@@ -133,51 +133,6 @@ class _Header:
 """
 
 
-def header_to_html(header_str: str) -> str:
-    """Decode and HTML-escape an email header field.
-
-    Processes encoded email headers by decoding multi-part headers and
-    concatenating them into a single HTML-safe string.
-
-    Decoding Strategy:
-        1. Uses email.header.decode_header() to parse encoded headers
-        2. Handles multi-part headers by concatenating them
-        3. For string parts, uses them directly
-        4. For byte parts, decodes with specified encoding (defaults to 'ascii' if None)
-        5. HTML-escapes the final result to prevent XSS
-
-    Args:
-        header_str (str): The raw email header string (may be RFC 2047 encoded).
-
-    Returns:
-        str: Decoded and HTML-escaped header string safe for inclusion in HTML.
-
-    Example:
-        >>> header_to_html('=?utf-8?B?SGVsbG8gV29ybGQ=?=')
-        'Hello World'
-        >>> header_to_html('Test <tag>')
-        'Test &lt;tag&gt;'
-    """
-    headers = email.header.decode_header(header_str)
-    headers_as_string = ""
-    # decoded headers can have multiple parts. Concat them.
-    for head in headers:
-        # If a header contains a str, don't try to decode.
-        if isinstance(head[0], str):
-            headers_as_string += head[0]
-        else:
-            # If a header is ascii encoded then head[1] is None
-            if head[1] is None:
-                enc = 'ascii'
-            else:
-                # If head[1] is not None it should be a string with the
-                # encoding.
-                enc = head[1]
-            headers_as_string += str(head[0], enc)
-    # eml headers can contain &, <, >
-    return escape(headers_as_string)
-
-
 def _embed_imgs(html_content: str, attachments: dict) -> str:
     """Embed inline images into HTML by replacing CID references with data URIs.
 
@@ -506,76 +461,6 @@ def _get_exclusive_outfile(outfile_path: Path) -> BufferedWriter:
     return outfile
 
 
-def generate_pdf(html_content: str, outfile_path: Path, infile: Path,
-                 debug_html: bool = False, page: str = 'a4',
-                 unsafe: bool = False):
-    """Convert HTML content to PDF with optional sanitization.
-
-    Generates a PDF from HTML content using WeasyPrint. By default, sanitizes
-    HTML to remove security and privacy risks before rendering.
-
-    Processing Steps:
-        1. Sanitize HTML (unless unsafe=True)
-        2. Optionally save HTML to disk for debugging
-        3. Parse HTML with WeasyPrint
-        4. Apply page size and margins via CSS
-        5. Get exclusive output file handle (prevents conflicts)
-        6. Write PDF to file
-
-    Args:
-        html_content (str): The HTML content to convert to PDF.
-        outfile_path (Path): Desired output file path.
-        infile (Path): Input EML file path (for logging/messages).
-        debug_html (bool, optional): If True, saves HTML to {outfile}.html for
-            debugging. Defaults to False.
-        page (str, optional): Page size for PDF (e.g., 'a4', 'letter').
-            Defaults to 'a4'.
-        unsafe (bool, optional): If True, bypasses HTML sanitization. Only use
-            when you completely trust the source. Defaults to False.
-
-    Note:
-        HTML sanitization is performed by security.sanitize_html() unless
-        unsafe=True. See security.md for details on what is filtered.
-
-    Raises:
-        Exception: Logs error if PDF generation fails, but does not re-raise.
-    """
-
-    # Weasyprint is extremely chatty with warnings. We'll tune it own a bit.
-    wp_logger = logging.getLogger('weasyprint')
-    ft_logger = logging.getLogger('fontTools')
-    if (logger.level == logging.DEBUG):
-        quiet_loglevel = logging.WARNING
-    elif (logger.level in [logging.INFO, logging.WARNING]):
-        quiet_loglevel = logging.ERROR
-    elif (logger.level == logging.ERROR):
-        quiet_loglevel = logging.ERROR + 10 # This means wp will shut up!
-    else:
-        raise ValueError('Logger contains an unexpected level: '
-                         f'{logger.level}')
-    for l in [wp_logger, ft_logger]:
-        l.setLevel(quiet_loglevel)
-
-    if not unsafe:
-        html_content = security.sanitize_html(html_content)
-    try:
-        if debug_html:
-            html_file = outfile_path.parent / Path(outfile_path.name + '.html')
-            of = open(html_file, 'w', encoding='utf-8')
-            of.write(html_content)
-            of.close()
-        html = HTML(string=html_content)
-        css = CSS(string=f'@page {{ size: {page}; margin: 1cm }}')
-
-        outfile = _get_exclusive_outfile(outfile_path)
-
-        html.write_pdf(outfile, presentational_hints=True,
-                       stylesheets=[css])
-        logger.info(f"Converted {infile} to PDF successfully.")
-    except Exception as e:
-        logger.error(f"Failed to convert {infile}: {str(e)}")
-
-
 def _get_filepaths(input_dir: Path) -> list[Path]:
     """Find all EML files in directory with case-insensitive matching.
 
@@ -792,3 +677,118 @@ def process_all_emls_in_dir(input_dir: Path, output_dir: Path,
             p.starmap(process_eml, p_args)
 
     print("All .eml files processed.")
+
+
+def generate_pdf(html_content: str, outfile_path: Path, infile: Path,
+                 debug_html: bool = False, page: str = 'a4',
+                 unsafe: bool = False):
+    """Convert HTML content to PDF with optional sanitization.
+
+    Generates a PDF from HTML content using WeasyPrint. By default, sanitizes
+    HTML to remove security and privacy risks before rendering.
+
+    Processing Steps:
+        1. Sanitize HTML (unless unsafe=True)
+        2. Optionally save HTML to disk for debugging
+        3. Parse HTML with WeasyPrint
+        4. Apply page size and margins via CSS
+        5. Get exclusive output file handle (prevents conflicts)
+        6. Write PDF to file
+
+    Args:
+        html_content (str): The HTML content to convert to PDF.
+        outfile_path (Path): Desired output file path.
+        infile (Path): Input EML file path (for logging/messages).
+        debug_html (bool, optional): If True, saves HTML to {outfile}.html for
+            debugging. Defaults to False.
+        page (str, optional): Page size for PDF (e.g., 'a4', 'letter').
+            Defaults to 'a4'.
+        unsafe (bool, optional): If True, bypasses HTML sanitization. Only use
+            when you completely trust the source. Defaults to False.
+
+    Note:
+        HTML sanitization is performed by security.sanitize_html() unless
+        unsafe=True. See security.md for details on what is filtered.
+
+    Raises:
+        Exception: Logs error if PDF generation fails, but does not re-raise.
+    """
+
+    # Weasyprint is extremely chatty with warnings. We'll tune it own a bit.
+    wp_logger = logging.getLogger('weasyprint')
+    ft_logger = logging.getLogger('fontTools')
+    if (logger.level == logging.DEBUG):
+        quiet_loglevel = logging.WARNING
+    elif (logger.level in [logging.INFO, logging.WARNING]):
+        quiet_loglevel = logging.ERROR
+    elif (logger.level == logging.ERROR):
+        quiet_loglevel = logging.ERROR + 10 # This means wp will shut up!
+    else:
+        raise ValueError('Logger contains an unexpected level: '
+                         f'{logger.level}')
+    for l in [wp_logger, ft_logger]:
+        l.setLevel(quiet_loglevel)
+
+    if not unsafe:
+        html_content = security.sanitize_html(html_content)
+    try:
+        if debug_html:
+            html_file = outfile_path.parent / Path(outfile_path.name + '.html')
+            of = open(html_file, 'w', encoding='utf-8')
+            of.write(html_content)
+            of.close()
+        html = HTML(string=html_content)
+        css = CSS(string=f'@page {{ size: {page}; margin: 1cm }}')
+
+        outfile = _get_exclusive_outfile(outfile_path)
+
+        html.write_pdf(outfile, presentational_hints=True,
+                       stylesheets=[css])
+        logger.info(f"Converted {infile} to PDF successfully.")
+    except Exception as e:
+        logger.error(f"Failed to convert {infile}: {str(e)}")
+
+
+def header_to_html(header_str: str) -> str:
+    """Decode and HTML-escape an email header field.
+
+    Processes encoded email headers by decoding multi-part headers and
+    concatenating them into a single HTML-safe string.
+
+    Decoding Strategy:
+        1. Uses email.header.decode_header() to parse encoded headers
+        2. Handles multi-part headers by concatenating them
+        3. For string parts, uses them directly
+        4. For byte parts, decodes with specified encoding (defaults to 'ascii' if None)
+        5. HTML-escapes the final result to prevent XSS
+
+    Args:
+        header_str (str): The raw email header string (may be RFC 2047 encoded).
+
+    Returns:
+        str: Decoded and HTML-escaped header string safe for inclusion in HTML.
+
+    Example:
+        >>> header_to_html('=?utf-8?B?SGVsbG8gV29ybGQ=?=')
+        'Hello World'
+        >>> header_to_html('Test <tag>')
+        'Test &lt;tag&gt;'
+    """
+    headers = email.header.decode_header(header_str)
+    headers_as_string = ""
+    # decoded headers can have multiple parts. Concat them.
+    for head in headers:
+        # If a header contains a str, don't try to decode.
+        if isinstance(head[0], str):
+            headers_as_string += head[0]
+        else:
+            # If a header is ascii encoded then head[1] is None
+            if head[1] is None:
+                enc = 'ascii'
+            else:
+                # If head[1] is not None it should be a string with the
+                # encoding.
+                enc = head[1]
+            headers_as_string += str(head[0], enc)
+    # eml headers can contain &, <, >
+    return escape(headers_as_string)
