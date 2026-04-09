@@ -80,16 +80,28 @@ Additional tags that can affect page behavior or load external resources:
 
 By default, all HTML content is sanitized before PDF generation:
 
+#### Via command line
+
+```bash
+eml2pdf convert_dir input_dir output_dir
+```
+
+or
+
+```bash
+eml2pdf convert_file input_file output_file
+```
+
+#### Via API
+
 ```python
 from eml2pdf import libeml2pdf
 
 # Sanitization is enabled by default (unsafe=False)
-libeml2pdf.process_eml(eml_path, output_dir)
-```
+libeml2pdf.process_eml(eml_path, output_path)
 
-**Command-line**:
-```bash
-python -m eml2pdf input/ output/
+# Or for a whole dir
+libeml2pdf.process_all_emls_in_dir(input_dir, output_dir)
 ```
 
 ### Unsafe Mode
@@ -104,19 +116,19 @@ tracking pixels, external resources, and other privacy-invasive techniques.
 Consider running eml2pdf airgapped if you have reason to.
 
 ```bash
-python -m eml2pdf input/ output/ --unsafe
+eml2pdf convert_file input_file output_file --unsafe
 ```
 
-## Technical Details
+## Some technical details
 
-### Sanitization Process
+### Sanitization process
 
 1. HTML content is parsed using BeautifulSoup.
 2. Risky tags are found and completely removed with `.decompose()`.
 3. Attributes are selectively filtered or modified.
 4. The sanitized HTML is converted back to a string.
 
-### Integration with PDF Generation
+### Integration with PDF generation
 
 The sanitization occurs in the `generate_pdf()` function in eml2pdf/libeml2pdf.py:
 
@@ -125,8 +137,12 @@ def generate_pdf(html_content: str, outfile_path: Path, infile: Path,
                  debug_html: bool = False, page: str = 'a4',
                  unsafe: bool = False):
     """Convert HTML to PDF."""
+
+    # ... Some logging config first ...
+
     if not unsafe:
         html_content = security.sanitize_html(html_content)
+
     # ... PDF generation continues ...
 ```
 
@@ -148,7 +164,7 @@ yourself and use on your discretion. Suggestions are more than welcome!
 4. **Update Dependencies**: Keep BeautifulSoup, WeasyPrint, and other
    dependencies up to date
 
-## Related Files
+## Related files
 
 - Security implementation: `eml2pdf/security.py`
 - Security integration: `eml2pdf/libeml2pdf.py`

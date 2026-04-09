@@ -160,7 +160,7 @@ a summary table.
 
 In a next step this HTML is rendered by weasyprint to a PDF.
 
-The '--debug_html' flag will save this intermediate HTML. You can use this to
+The `--debug_html` flag will save this intermediate HTML. You can use this to
 check if there is an email parsing issue in eml2pdf or a PDF conversion issue
 in weasyprint.
 
@@ -190,7 +190,7 @@ remote stylesheets, etc.
 We try to cleanup. We can't give you a 100% guarantee. If you're very worried,
 please cleanup your mails yourself.
 
-You can use the --unsafe flag if you don't want eml2pdf to try and
+You can use the `--unsafe` flag if you don't want eml2pdf to try and
 sanitize your mails. Check your mails' content before you use this flag!
 
 ##### MD5 sums of attachments
