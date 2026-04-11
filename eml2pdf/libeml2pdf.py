@@ -592,7 +592,7 @@ def process_eml(eml_path: Path, output_path: Path, page: str = 'a4',
         with open(eml_path, "r", encoding="utf-8") as f:
             msg = email.message_from_file(f)
 
-    email_header = Header(msg, eml_path)
+    email_header = _Header(msg, eml_path)
     html_content, attachments = _walk_eml(msg, eml_path)
     attachment_list = _generate_attachment_list(attachments)
 
