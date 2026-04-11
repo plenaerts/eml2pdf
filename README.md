@@ -228,6 +228,7 @@ https://github.com/klokie/).
 - Inline non-image attachments - [omusale](https://github.com/omusale)
 - convert_file mode and 8bit CTE with UTF-8 encoding -
   [bastidest](https://github.com/bastidest).
+- Fix bug - Header class not renamed correctly [benhxy](https://github.com/benhxy)
 
 If you want to work on eml2pdf, read [DEVELOPMENT.md on
 GitHub](https://github.com/plenaerts/eml2pdf/blob/main/DEVELOPMENT.md) or

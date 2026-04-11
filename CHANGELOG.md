@@ -1,5 +1,15 @@
 # Eml2pdf changelog
 
+## v2.0.2 - 2026-04-10
+
+- Bugfix - Header class renamed to internal - contributed by
+  [benhxy](https://github.com/benhxy)
+- Added tests that would have prevented above.
+
+## v2.0.1 - 2026-04-09
+
+- Fix errors in README.md
+
 ## v2.0 - 2026-04-09
 
 - **Breaking changes to the CLI and API**
