@@ -1,6 +1,7 @@
 import email
 import email.utils
 import email.header
+import email.message
 from html import escape
 import re
 import datetime
@@ -58,8 +59,8 @@ class _Email:
         _Header() and _walk_eml() internally.
     """
     def __init__(self, msg: email.message.Message, eml_path: Path):
-        self.header = _Header(msg, eml_path)
-        self.html, self.attachments = _walk_eml(msg, eml_path)
+        self.header = _Header(msg)
+        self.html, self.attachments = _walk_eml(msg)
 
 
 class _Header:
@@ -90,7 +91,7 @@ class _Header:
     formatted_date = "No date."
     date = None
 
-    def __init__(self, msg: email.message.Message, eml_path: Path):
+    def __init__(self, msg: email.message.Message):
         """Parse email message and extract header fields.
 
         Decodes From, To, Subject, and Date headers from the email message.
@@ -111,8 +112,7 @@ class _Header:
             self.to_addr = header_to_html(msg.get("to", "No recipient"))
             self.subject = header_to_html(msg.get("subject", "No subject"))
         except UnicodeError as e:
-            logger.error(f"Failed to decode header field for {eml_path}: "
-                         f"{str(e)}")
+            logger.error(f"Failed to decode header field: {str(e)}")
 
         msg_date = msg.get("date", "")
         self.date = email.utils.parsedate_to_datetime(msg.get("date", "")) \
@@ -249,7 +249,7 @@ def _decode_to_str(bytes_content: bytes, content_charset: str,
     return decoded
 
 
-def _walk_eml(msg: email.message.Message, eml_path: Path) -> \
+def _walk_eml(msg: email.message.Message) -> \
         tuple[str, list[_Attachment]]:
     """Extract and process all MIME parts from an email message.
 
@@ -289,7 +289,6 @@ def _walk_eml(msg: email.message.Message, eml_path: Path) -> \
 
     Args:
         msg (email.message.Message): The parsed email message to walk.
-        eml_path (Path): Path to the EML file (used for logging messages).
 
     Returns:
         tuple[str, list[_Attachment]]: A tuple of (html_content, attachments) where
@@ -545,6 +544,28 @@ def _get_cte(message: email.message.Message) -> str:
         cte = str(cte).strip().lower()
     return cte
 
+def _generate_html(msg: email.message.Message) -> str:
+    """Generates HTML for a given message.
+
+    Args:
+        message: (email.message.Message): Email message to generate HTML for.
+
+    Returns (str): The email as HTML
+    """
+    email_header = _Header(msg)
+    html_content, attachments = _walk_eml(msg)
+    attachment_list = _generate_attachment_list(attachments)
+    # Add UTF-8 meta tag and email header if not present
+    if isinstance(html_content, str):
+        html_content = f"""
+<meta charset="UTF-8">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+{email_header.html}
+{attachment_list}
+<hr>
+{html_content}
+"""
+    return email_header, html_content
 
 def process_eml(eml_path: Path, output_path: Path, page: str = 'a4',
                 debug_html: bool = False, unsafe: bool = False):
@@ -592,23 +613,10 @@ def process_eml(eml_path: Path, output_path: Path, page: str = 'a4',
         with open(eml_path, "r", encoding="utf-8") as f:
             msg = email.message_from_file(f)
 
-    email_header = _Header(msg, eml_path)
-    html_content, attachments = _walk_eml(msg, eml_path)
-    attachment_list = _generate_attachment_list(attachments)
+    email_header, html_content = _generate_html(msg)
 
     # Convert to PDF if HTML content is found
     if html_content:
-        # Add UTF-8 meta tag and email header if not present
-        if isinstance(html_content, str):
-            html_content = f"""
-<meta charset="UTF-8">
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-{email_header.html}
-{attachment_list}
-<hr>
-{html_content}
-"""
-
         if output_path.is_dir():
             output_path = _get_output_base_path(email_header.date,
                                                 email_header.subject,
