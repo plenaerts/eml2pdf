@@ -15,6 +15,7 @@ import logging
 from multiprocessing import Pool
 import hashlib
 from dataclasses import dataclass
+from typing import overload
 
 from weasyprint import HTML, CSS  # type: ignore
 from markdown import markdown
@@ -632,6 +633,28 @@ def process_eml(eml_path: Path, output_path: Path, page: str = 'a4',
         logger.warning("No plain text or HTML content found "
                        f"in {eml_path}. Skipping...")
 
+def process_eml_bytes(contents: bytes, page: str = 'a4', debug_html: bool = False, unsafe: bool = False) -> bytes:
+    """Generates a PDF from an EML file in memory.
+
+    Same as process_eml() but accepts and returns bytes instead of files.
+
+    Args:
+        contents (bytes): The bytes of the eml file
+        page (str, optional): PDF page size. Defaults to 'a4'.
+        debug_html (bool, optional): Save HTML to disk for debugging.
+          Defaults to False.
+        unsafe (bool, optional): Skip HTML sanitization. Defaults to False.
+
+    Returns (bytes): The bytes of a valid PDF file.
+    """
+    message = email.message_from_bytes(contents)
+    _, html_content = _generate_html(message)
+    return generate_pdf(
+        html_content=html_content,
+        page=page,
+        unsafe=unsafe,
+    )
+
 
 def process_all_emls_in_dir(input_dir: Path, output_dir: Path,
                             number_of_procs: int = 1,
@@ -692,13 +715,33 @@ def process_all_emls_in_dir(input_dir: Path, output_dir: Path,
     print("All .eml files processed.")
 
 
+@overload
 def generate_pdf(
+    *,
     html_content: str,
-    outfile_path: Path | None,
+    outfile_path: Path,
     debug_html: bool = False,
     page: str = 'a4',
     unsafe: bool = False,
-):
+) -> None:
+    pass
+
+@overload
+def generate_pdf(
+    *,
+    html_content: str,
+    page: str = 'a4',
+    unsafe: bool = False,
+) -> bytes:
+    pass
+
+def generate_pdf(
+    html_content: str,
+    outfile_path: Path | None = None,
+    debug_html: bool = False,
+    page: str = 'a4',
+    unsafe: bool = False,
+) -> bytes | None:
     """Convert HTML content to PDF with optional sanitization.
 
     Generates a PDF from HTML content using WeasyPrint. By default, sanitizes
