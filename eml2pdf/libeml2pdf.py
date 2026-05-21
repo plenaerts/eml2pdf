@@ -621,8 +621,13 @@ def process_eml(eml_path: Path, output_path: Path, page: str = 'a4',
             output_path = _get_output_base_path(email_header.date,
                                                 email_header.subject,
                                                 output_path)
-        generate_pdf(html_content, output_path, eml_path,
-                     debug_html=debug_html, page=page, unsafe=unsafe)
+        generate_pdf(
+            html_content=html_content,
+            outfile_path=output_path,
+            debug_html=debug_html,
+            page=page,
+            unsafe=unsafe,
+        )
     else:
         logger.warning("No plain text or HTML content found "
                        f"in {eml_path}. Skipping...")
@@ -687,9 +692,13 @@ def process_all_emls_in_dir(input_dir: Path, output_dir: Path,
     print("All .eml files processed.")
 
 
-def generate_pdf(html_content: str, outfile_path: Path, infile: Path,
-                 debug_html: bool = False, page: str = 'a4',
-                 unsafe: bool = False):
+def generate_pdf(
+    html_content: str,
+    outfile_path: Path,
+    debug_html: bool = False,
+    page: str = 'a4',
+    unsafe: bool = False,
+):
     """Convert HTML content to PDF with optional sanitization.
 
     Generates a PDF from HTML content using WeasyPrint. By default, sanitizes
@@ -706,7 +715,6 @@ def generate_pdf(html_content: str, outfile_path: Path, infile: Path,
     Args:
         html_content (str): The HTML content to convert to PDF.
         outfile_path (Path): Desired output file path.
-        infile (Path): Input EML file path (for logging/messages).
         debug_html (bool, optional): If True, saves HTML to {outfile}.html for
             debugging. Defaults to False.
         page (str, optional): Page size for PDF (e.g., 'a4', 'letter').
@@ -750,11 +758,14 @@ def generate_pdf(html_content: str, outfile_path: Path, infile: Path,
 
         outfile = _get_exclusive_outfile(outfile_path)
 
-        html.write_pdf(outfile, presentational_hints=True,
-                       stylesheets=[css])
-        logger.info(f"Converted {infile} to PDF successfully.")
+        html.write_pdf(
+            target=outfile,
+            presentational_hints=True,
+            stylesheets=[css],
+        )
+        logger.info(f"Converted to PDF successfully.")
     except Exception as e:
-        logger.error(f"Failed to convert {infile}: {str(e)}")
+        logger.error(f"Failed to convert: {str(e)}")
 
 
 def header_to_html(header_str: str) -> str:
