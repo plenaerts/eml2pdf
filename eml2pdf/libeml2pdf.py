@@ -694,7 +694,7 @@ def process_all_emls_in_dir(input_dir: Path, output_dir: Path,
 
 def generate_pdf(
     html_content: str,
-    outfile_path: Path,
+    outfile_path: Path | None,
     debug_html: bool = False,
     page: str = 'a4',
     unsafe: bool = False,
@@ -748,7 +748,7 @@ def generate_pdf(
     if not unsafe:
         html_content = security.sanitize_html(html_content)
     try:
-        if debug_html:
+        if debug_html and outfile_path:
             html_file = outfile_path.parent / Path(outfile_path.name + '.html')
             of = open(html_file, 'w', encoding='utf-8')
             of.write(html_content)
@@ -756,14 +756,17 @@ def generate_pdf(
         html = HTML(string=html_content)
         css = CSS(string=f'@page {{ size: {page}; margin: 1cm }}')
 
-        outfile = _get_exclusive_outfile(outfile_path)
+        if outfile_path:
+            outfile = _get_exclusive_outfile(outfile_path)
 
-        html.write_pdf(
-            target=outfile,
-            presentational_hints=True,
-            stylesheets=[css],
-        )
-        logger.info(f"Converted to PDF successfully.")
+            html.write_pdf(
+                target=outfile,
+                presentational_hints=True,
+                stylesheets=[css],
+            )
+            logger.info(f"Converted to PDF successfully.")
+        else:
+            return html.write_pdf(target=None, presentational_hints=True, stylesheets=[css])
     except Exception as e:
         logger.error(f"Failed to convert: {str(e)}")
 
