@@ -43,6 +43,8 @@ dev = [
     "poethepoet>=0.24.0",  # Task runner
     "build>=1.0.0",  # For building distributions
     "twine>=4.0.0",  # For uploading to PyPI
+    "types-Markdown>=3.10.2.20260518",
+    
 ]
 # Install with: pip install -e ".[docs]"
 docs = [

@@ -545,7 +545,7 @@ def _get_cte(message: email.message.Message) -> str:
         cte = str(cte).strip().lower()
     return cte
 
-def _generate_html(msg: email.message.Message) -> str:
+def _generate_html(msg: email.message.Message) -> tuple[_Header, str]:
     """Generates HTML for a given message.
 
     Args:
@@ -808,10 +808,12 @@ def generate_pdf(
                 stylesheets=[css],
             )
             logger.info(f"Converted to PDF successfully.")
+            return None
         else:
             return html.write_pdf(target=None, presentational_hints=True, stylesheets=[css])
     except Exception as e:
         logger.error(f"Failed to convert: {str(e)}")
+        return None
 
 
 def header_to_html(header_str: str) -> str:
