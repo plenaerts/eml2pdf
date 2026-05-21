@@ -724,8 +724,11 @@ def generate_pdf(html_content: str, outfile_path: Path, infile: Path,
     elif (logger.level == logging.ERROR):
         quiet_loglevel = logging.ERROR + 10 # This means wp will shut up!
     else:
-        raise ValueError('Logger contains an unexpected level: '
-                         f'{logger.level}')
+        # The CLI will set the log level, so if it's not set, then we're probably
+        # being called by another file as an API. Assume the WARNING level:
+        logger.setLevel(logging.WARNING)
+        quiet_loglevel = logging.ERROR
+
     for l in [wp_logger, ft_logger]:
         l.setLevel(quiet_loglevel)
 
