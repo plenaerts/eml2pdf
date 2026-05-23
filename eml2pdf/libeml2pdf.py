@@ -679,6 +679,28 @@ def process_all_emls_in_dir(input_dir: Path, output_dir: Path,
     print("All .eml files processed.")
 
 
+def _set_log_levels():
+    """Tune down Weasyprint warnings."""
+    if (logger.level == logging.NOTSET):
+        logger.setLevel(logging.WARNING)
+
+    wp_logger = logging.getLogger('weasyprint')
+    ft_logger = logging.getLogger('fontTools')
+
+    if (logger.level == logging.DEBUG):
+        quiet_loglevel = logging.WARNING
+    elif (logger.level in [logging.INFO, logging.WARNING]):
+        quiet_loglevel = logging.ERROR
+    elif (logger.level == logging.ERROR):
+        quiet_loglevel = logging.ERROR + 10  # This means wp will shut up!
+    else:
+        raise ValueError('Logger contains an unexpected level: '
+                         f'{logger.level}')
+
+    for lgr in [wp_logger, ft_logger]:
+        lgr.setLevel(quiet_loglevel)
+
+
 def generate_pdf(html_content: str, outfile_path: Path, infile: Path,
                  debug_html: bool = False, page: str = 'a4',
                  unsafe: bool = False):
@@ -714,20 +736,7 @@ def generate_pdf(html_content: str, outfile_path: Path, infile: Path,
         Exception: Logs error if PDF generation fails, but does not re-raise.
     """
 
-    # Weasyprint is extremely chatty with warnings. We'll tune it own a bit.
-    wp_logger = logging.getLogger('weasyprint')
-    ft_logger = logging.getLogger('fontTools')
-    if (logger.level == logging.DEBUG):
-        quiet_loglevel = logging.WARNING
-    elif (logger.level in [logging.INFO, logging.WARNING]):
-        quiet_loglevel = logging.ERROR
-    elif (logger.level == logging.ERROR):
-        quiet_loglevel = logging.ERROR + 10 # This means wp will shut up!
-    else:
-        raise ValueError('Logger contains an unexpected level: '
-                         f'{logger.level}')
-    for l in [wp_logger, ft_logger]:
-        l.setLevel(quiet_loglevel)
+    _set_log_levels()
 
     if not unsafe:
         html_content = security.sanitize_html(html_content)
