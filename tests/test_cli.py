@@ -1,8 +1,7 @@
 """Unit tests for CLI argument parsing and main function."""
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from pathlib import Path
-import sys
 import logging
 from eml2pdf.eml2pdf import get_args, main
 
@@ -244,3 +243,49 @@ class TestMain(unittest.TestCase):
             call_args = mock_process.call_args[0]
             # debug_html is the 4th argument (index 3)
             self.assertTrue(call_args[3])
+
+
+class TestLogLevelPropagation(unittest.TestCase):
+    """Test that CLI log level settings propagate to libeml2pdf."""
+
+    @patch('eml2pdf.eml2pdf.libeml2pdf.process_eml')
+    def test_verbose_sets_debug_level(self, mock_process):
+        """Test --verbose sets logger level to DEBUG."""
+        import eml2pdf.libeml2pdf as lib
+        orig_level = lib.logger.level
+        with patch('sys.argv', ['eml2pdf', 'convert_file', 'input.eml', 'output.pdf', '-v']):
+            main()
+            self.assertEqual(lib.logger.level, logging.DEBUG)
+        lib.logger.setLevel(orig_level)
+
+    @patch('eml2pdf.eml2pdf.libeml2pdf.process_eml')
+    def test_quiet_sets_error_level(self, mock_process):
+        """Test --quiet sets logger level to ERROR."""
+        import eml2pdf.libeml2pdf as lib
+        orig_level = lib.logger.level
+        with patch('sys.argv', ['eml2pdf', 'convert_file', 'input.eml', 'output.pdf', '-q']):
+            main()
+            self.assertEqual(lib.logger.level, logging.ERROR)
+        lib.logger.setLevel(orig_level)
+
+    @patch('eml2pdf.eml2pdf.libeml2pdf.process_eml')
+    def test_default_sets_info_level(self, mock_process):
+        """Test default (no flags) sets logger level to INFO."""
+        import eml2pdf.libeml2pdf as lib
+        orig_level = lib.logger.level
+        with patch('sys.argv', ['eml2pdf', 'convert_file', 'input.eml', 'output.pdf']):
+            main()
+            self.assertEqual(lib.logger.level, logging.INFO)
+        lib.logger.setLevel(orig_level)
+
+    @patch('eml2pdf.eml2pdf.libeml2pdf.process_eml')
+    def test_verbose_quiet_verbose_wins(self, mock_process):
+        """Test --verbose and --quiet together, --verbose wins with warning."""
+        import eml2pdf.libeml2pdf as lib
+        orig_level = lib.logger.level
+        with patch('sys.argv', ['eml2pdf', 'convert_file', 'input.eml', 'output.pdf', '-v', '-q']):
+            with patch('logging.warning') as mock_warning:
+                main()
+                mock_warning.assert_called_once()
+                self.assertEqual(lib.logger.level, logging.DEBUG)
+        lib.logger.setLevel(orig_level)
