@@ -53,15 +53,15 @@ class _Email:
 
     Args:
         msg (email.message.Message): Parsed email message object.
-        eml_path (Path): Path to the EML file being processed.
+        logging_id (str | None): Optional identifier for logging context.
 
     Note:
         The constructor automatically extracts all content by calling
         _Header() and _walk_eml() internally.
     """
-    def __init__(self, msg: email.message.Message, eml_path: Path):
-        self.header = _Header(msg)
-        self.html, self.attachments = _walk_eml(msg)
+    def __init__(self, msg: email.message.Message, logging_id: str | None = None):
+        self.header = _Header(msg, logging_id)
+        self.html, self.attachments = _walk_eml(msg, logging_id)
 
 
 class _Header:
@@ -92,7 +92,7 @@ class _Header:
     formatted_date = "No date."
     date = None
 
-    def __init__(self, msg: email.message.Message):
+    def __init__(self, msg: email.message.Message, logging_id: str | None = None):
         """Parse email message and extract header fields.
 
         Decodes From, To, Subject, and Date headers from the email message.
@@ -100,7 +100,7 @@ class _Header:
 
         Args:
             msg (email.message.Message): The parsed email message object.
-            eml_path (Path): Path to the EML file being processed (for logging).
+            logging_id (str | None): Optional identifier for logging context.
 
         Note:
             If header decoding fails with UnicodeError, the error is logged
@@ -113,7 +113,8 @@ class _Header:
             self.to_addr = header_to_html(msg.get("to", "No recipient"))
             self.subject = header_to_html(msg.get("subject", "No subject"))
         except UnicodeError as e:
-            logger.error(f"Failed to decode header field: {str(e)}")
+            prefix = f"[{logging_id}] " if logging_id else ""
+            logger.error(f"{prefix}Failed to decode header field: {str(e)}")
 
         msg_date = msg.get("date", "")
         self.date = email.utils.parsedate_to_datetime(msg.get("date", "")) \
@@ -250,7 +251,7 @@ def _decode_to_str(bytes_content: bytes, content_charset: str,
     return decoded
 
 
-def _walk_eml(msg: email.message.Message) -> \
+def _walk_eml(msg: email.message.Message, logging_id: str | None = None) -> \
         tuple[str, list[_Attachment]]:
     """Extract and process all MIME parts from an email message.
 
@@ -290,6 +291,7 @@ def _walk_eml(msg: email.message.Message) -> \
 
     Args:
         msg (email.message.Message): The parsed email message to walk.
+        logging_id (str | None): Optional identifier for logging context.
 
     Returns:
         tuple[str, list[_Attachment]]: A tuple of (html_content, attachments) where
@@ -545,16 +547,17 @@ def _get_cte(message: email.message.Message) -> str:
         cte = str(cte).strip().lower()
     return cte
 
-def _generate_html(msg: email.message.Message) -> str:
+def _generate_html(msg: email.message.Message, logging_id: str | None = None) -> str:
     """Generates HTML for a given message.
 
     Args:
         message: (email.message.Message): Email message to generate HTML for.
+        logging_id (str | None): Optional identifier for logging context.
 
     Returns (str): The email as HTML
     """
-    email_header = _Header(msg)
-    html_content, attachments = _walk_eml(msg)
+    email_header = _Header(msg, logging_id)
+    html_content, attachments = _walk_eml(msg, logging_id)
     attachment_list = _generate_attachment_list(attachments)
     # Add UTF-8 meta tag and email header if not present
     if isinstance(html_content, str):
@@ -569,7 +572,8 @@ def _generate_html(msg: email.message.Message) -> str:
     return email_header, html_content
 
 def process_eml(eml_path: Path, output_path: Path, page: str = 'a4',
-                debug_html: bool = False, unsafe: bool = False):
+                debug_html: bool = False, unsafe: bool = False,
+                logging_id: str | None = None):
     """Process a single EML file and generate a PDF.
 
     1. Parse EML file with email.message_from_binary_file() (fallback to message_from_file())
@@ -597,13 +601,19 @@ def process_eml(eml_path: Path, output_path: Path, page: str = 'a4',
         debug_html (bool, optional): Save HTML to disk for debugging.
           Defaults to False.
         unsafe (bool, optional): Skip HTML sanitization. Defaults to False.
+        logging_id (str | None, optional): Identifier for logging context.
+          Defaults to the eml_path name.
 
     Note:
         If no text content is found, the file is skipped and a warning is
         logged.
         Output filename format: {date}-{subject}.pdf
     """
-    logger.info(f'Processing {eml_path}')
+    # Use filename as default logging_id if not provided
+    effective_logging_id = logging_id if logging_id is not None else eml_path.name
+    prefix = f"[{effective_logging_id}] "
+    
+    logger.info(f'{prefix}Processing {eml_path}')
     # Open and parse the .eml file
     # Try binary mode first to handle various encodings (ISO-8859-1, etc.)
     try:
@@ -614,7 +624,7 @@ def process_eml(eml_path: Path, output_path: Path, page: str = 'a4',
         with open(eml_path, "r", encoding="utf-8") as f:
             msg = email.message_from_file(f)
 
-    email_header, html_content = _generate_html(msg)
+    email_header, html_content = _generate_html(msg, effective_logging_id)
 
     # Convert to PDF if HTML content is found
     if html_content:
@@ -628,12 +638,14 @@ def process_eml(eml_path: Path, output_path: Path, page: str = 'a4',
             debug_html=debug_html,
             page=page,
             unsafe=unsafe,
+            logging_id=effective_logging_id,
         )
     else:
-        logger.warning("No plain text or HTML content found "
+        logger.warning(f"{prefix}No plain text or HTML content found "
                        f"in {eml_path}. Skipping...")
 
-def process_eml_bytes(contents: bytes, page: str = 'a4', debug_html: bool = False, unsafe: bool = False) -> bytes:
+def process_eml_bytes(contents: bytes, page: str = 'a4', debug_html: bool = False, 
+                     unsafe: bool = False, logging_id: str | None = None) -> bytes:
     """Generates a PDF from an EML file in memory.
 
     Same as process_eml() but accepts and returns bytes instead of files.
@@ -644,15 +656,17 @@ def process_eml_bytes(contents: bytes, page: str = 'a4', debug_html: bool = Fals
         debug_html (bool, optional): Save HTML to disk for debugging.
           Defaults to False.
         unsafe (bool, optional): Skip HTML sanitization. Defaults to False.
+        logging_id (str | None, optional): Identifier for logging context.
 
     Returns (bytes): The bytes of a valid PDF file.
     """
     message = email.message_from_bytes(contents)
-    _, html_content = _generate_html(message)
+    _, html_content = _generate_html(message, logging_id)
     return generate_pdf(
         html_content=html_content,
         page=page,
         unsafe=unsafe,
+        logging_id=logging_id,
     )
 
 
@@ -723,6 +737,7 @@ def generate_pdf(
     debug_html: bool = False,
     page: str = 'a4',
     unsafe: bool = False,
+    logging_id: str | None = None,
 ) -> None:
     pass
 
@@ -732,6 +747,7 @@ def generate_pdf(
     html_content: str,
     page: str = 'a4',
     unsafe: bool = False,
+    logging_id: str | None = None,
 ) -> bytes:
     pass
 
@@ -741,6 +757,7 @@ def generate_pdf(
     debug_html: bool = False,
     page: str = 'a4',
     unsafe: bool = False,
+    logging_id: str | None = None,
 ) -> bytes | None:
     """Convert HTML content to PDF with optional sanitization.
 
@@ -764,6 +781,7 @@ def generate_pdf(
             Defaults to 'a4'.
         unsafe (bool, optional): If True, bypasses HTML sanitization. Only use
             when you completely trust the source. Defaults to False.
+        logging_id (str | None, optional): Identifier for logging context.
 
     Note:
         HTML sanitization is performed by security.sanitize_html() unless
@@ -772,6 +790,8 @@ def generate_pdf(
     Raises:
         Exception: Logs error if PDF generation fails, but does not re-raise.
     """
+    # Build logging prefix
+    prefix = f"[{logging_id}] " if logging_id else ""
 
     # Weasyprint is extremely chatty with warnings. We'll tune it own a bit.
     wp_logger = logging.getLogger('weasyprint')
@@ -807,11 +827,11 @@ def generate_pdf(
                 presentational_hints=True,
                 stylesheets=[css],
             )
-            logger.info(f"Converted to PDF successfully.")
+            logger.info(f"{prefix}Converted to PDF successfully.")
         else:
             return html.write_pdf(target=None, presentational_hints=True, stylesheets=[css])
     except Exception as e:
-        logger.error(f"Failed to convert: {str(e)}")
+        logger.error(f"{prefix}Failed to convert: {str(e)}")
 
 
 def header_to_html(header_str: str) -> str:
