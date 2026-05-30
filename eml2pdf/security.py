@@ -45,8 +45,17 @@ def sanitize_html(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
 
     # Remove risky tags
-    risky_tags = ['script', 'iframe', 'object', 'embed', 'video', 'audio',
-                  'form', 'meta', 'link']
+    risky_tags = [
+        'script',
+        'iframe',
+        'object',
+        'embed',
+        'video',
+        'audio',
+        'form',
+        'meta',
+        'link',
+    ]
     for tag in soup.find_all(risky_tags):
         tag.decompose()
 

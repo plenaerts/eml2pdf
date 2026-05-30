@@ -16,28 +16,29 @@ mails = {m.filename: m for m in generate_test_emls.mails}
 
 # Adding two extra email msgs. They are real eml's.
 more_mails = mails | {
-    "simple_plain_and_html_embedded_img.eml":
-    generate_test_emls.TestMail(
-        _from="First Last <first.last@outlook.com>",
-        to="\"Last, First\" <first.last@outlook.com>",
-        subject="This is a test mail with embedded imgs",
-        msg="",
-        enc="utf-8",
-        filename="simple_plain_and_html_embedded_img.eml"
+    'simple_plain_and_html_embedded_img.eml': generate_test_emls.TestMail(
+        _from='First Last <first.last@outlook.com>',
+        to='"Last, First" <first.last@outlook.com>',
+        subject='This is a test mail with embedded imgs',
+        msg='',
+        enc='utf-8',
+        filename='simple_plain_and_html_embedded_img.eml',
     ),
-    "train_ticket.eml": generate_test_emls.TestMail(
-        to="first.last@outlook.com",
-        _from="\"NMBS/SNCB:\" <no-reply@belgiantrain.be>",
-        subject="NMBS Mobile Ticket NL",
-        msg="",
-        enc="utf-8", filename="train_ticket.eml"
+    'train_ticket.eml': generate_test_emls.TestMail(
+        to='first.last@outlook.com',
+        _from='"NMBS/SNCB:" <no-reply@belgiantrain.be>',
+        subject='NMBS Mobile Ticket NL',
+        msg='',
+        enc='utf-8',
+        filename='train_ticket.eml',
     ),
-    "plain_lorem_ipsum.eml": generate_test_emls.TestMail(
-        to="recipient@example.com",
-        _from="sender@example.com",
-        subject="Test Email with Lorem Ipsum",
-        msg="",
-        enc="utf-8", filename="plain_lorem_ipsum.eml"
+    'plain_lorem_ipsum.eml': generate_test_emls.TestMail(
+        to='recipient@example.com',
+        _from='sender@example.com',
+        subject='Test Email with Lorem Ipsum',
+        msg='',
+        enc='utf-8',
+        filename='plain_lorem_ipsum.eml',
     ),
 }
 
@@ -62,10 +63,11 @@ class TestEmls(unittest.TestCase):
             with self.subTest(eml=eml):
                 # Header fields are not named consistently. Tuples the contain
                 # header attr names depending on context.
-                for h in [('_from', 'from'),
-                          ('to', 'to'),
-                          ('subject', 'subject')
-                          ]:
+                for h in [
+                    ('_from', 'from'),
+                    ('to', 'to'),
+                    ('subject', 'subject'),
+                ]:
                     src_head = escape(getattr(src_eml, h[0]))
                     eml_head = libeml2pdf.header_to_html(eml_msg.get(h[1]))
                     self.assertEqual(src_head, eml_head)
@@ -73,14 +75,19 @@ class TestEmls(unittest.TestCase):
     def test_plain_text(self):
         """Plain text file body should render as html."""
         pt_emls = [
-            ('plain_lorem_ipsum.eml',
-             get_tgt_html(Path('plain_lorem_ipsum.html'))),
-            ('plain_text.eml',
-             get_tgt_html(Path('plain_text.html'))),
-            ('mixed_plain_html_smiley_embedded.eml',
-             get_tgt_html(Path('mixed_plain_html_smiley_embedded.html'))),
-            ('plain_native_utf8.eml',
-             get_tgt_html(Path('plain_native_utf8.html'))),
+            (
+                'plain_lorem_ipsum.eml',
+                get_tgt_html(Path('plain_lorem_ipsum.html')),
+            ),
+            ('plain_text.eml', get_tgt_html(Path('plain_text.html'))),
+            (
+                'mixed_plain_html_smiley_embedded.eml',
+                get_tgt_html(Path('mixed_plain_html_smiley_embedded.html')),
+            ),
+            (
+                'plain_native_utf8.eml',
+                get_tgt_html(Path('plain_native_utf8.html')),
+            ),
         ]
 
         for eml in pt_emls:
@@ -116,12 +123,18 @@ class TestEmls(unittest.TestCase):
             eml_msg = email.message_from_binary_file(f)
         attachments_from_eml = libeml2pdf._walk_eml(eml_msg)[1]
         # Check if the .doc was found in the attachments list
-        self.assertEqual(len(attachments_from_eml), 1, f"Should have found 1 attachment {attachments_from_eml}")
+        self.assertEqual(
+            len(attachments_from_eml),
+            1,
+            f'Should have found 1 attachment {attachments_from_eml}',
+        )
 
     def test_plain_and_html_inline(self):
         """Emls with both plain text and html inline parts render once."""
-        phi_eml = ('plain_and_html_inline.eml',
-                   get_tgt_html(Path('plain_and_html_inline.html')))
+        phi_eml = (
+            'plain_and_html_inline.eml',
+            get_tgt_html(Path('plain_and_html_inline.html')),
+        )
         with open(eml_path / Path(phi_eml[0]), 'rb') as f:
             eml_msg = email.message_from_binary_file(f)
             eml_html = libeml2pdf._walk_eml(eml_msg)[0]

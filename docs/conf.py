@@ -5,6 +5,7 @@
 
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
@@ -14,11 +15,11 @@ author = 'Pieter Lenaerts'
 
 # -- General configuration ---------------------------------------------------
 extensions = [
-    'sphinx.ext.autodoc',       # Auto-generate docs from docstrings
-    'sphinx.ext.napoleon',      # Support Google/NumPy docstring styles
-    'sphinx.ext.viewcode',      # Add links to source code
-    'sphinx.ext.githubpages',   # Create .nojekyll file for GitHub Pages
-    'myst_parser',              # Support Markdown files
+    'sphinx.ext.autodoc',  # Auto-generate docs from docstrings
+    'sphinx.ext.napoleon',  # Support Google/NumPy docstring styles
+    'sphinx.ext.viewcode',  # Add links to source code
+    'sphinx.ext.githubpages',  # Create .nojekyll file for GitHub Pages
+    'myst_parser',  # Support Markdown files
 ]
 
 # Napoleon settings for Google-style docstrings
@@ -59,5 +60,5 @@ autodoc_default_options = {
     'member-order': 'bysource',
     'special-members': '__init__',
     'undoc-members': True,
-    'exclude-members': '__weakref__'
+    'exclude-members': '__weakref__',
 }

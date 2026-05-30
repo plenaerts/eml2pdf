@@ -35,6 +35,7 @@ class _Attachment:
         size (int): Size of the attachment in bytes.
         md5sum (str): MD5 hash hex digest for integrity verification.
     """
+
     name: str
     size: int
     md5sum: str
@@ -59,7 +60,10 @@ class _Email:
         The constructor automatically extracts all content by calling
         _Header() and _walk_eml() internally.
     """
-    def __init__(self, msg: email.message.Message, logging_id: str | None = None):
+
+    def __init__(
+        self, msg: email.message.Message, logging_id: str | None = None
+    ):
         self.header = _Header(msg, logging_id)
         self.html, self.attachments = _walk_eml(msg, logging_id)
 
@@ -85,14 +89,17 @@ class _Header:
         to prevent XSS vulnerabilities. UnicodeErrors during decoding are logged
         but don't stop processing.
     """
-    from_addr = "Not decoded."
-    to_addr = "Not decoded."
-    subject = "Not decoded."
-    html = "Not decoded."
-    formatted_date = "No date."
+
+    from_addr = 'Not decoded.'
+    to_addr = 'Not decoded.'
+    subject = 'Not decoded.'
+    html = 'Not decoded.'
+    formatted_date = 'No date.'
     date = None
 
-    def __init__(self, msg: email.message.Message, logging_id: str | None = None):
+    def __init__(
+        self, msg: email.message.Message, logging_id: str | None = None
+    ):
         """Parse email message and extract header fields.
 
         Decodes From, To, Subject, and Date headers from the email message.
@@ -109,18 +116,22 @@ class _Header:
         # Format email header
         # Decode headers if encoded
         try:
-            self.from_addr = header_to_html(msg.get("from", "No sender"))
-            self.to_addr = header_to_html(msg.get("to", "No recipient"))
-            self.subject = header_to_html(msg.get("subject", "No subject"))
+            self.from_addr = header_to_html(msg.get('from', 'No sender'))
+            self.to_addr = header_to_html(msg.get('to', 'No recipient'))
+            self.subject = header_to_html(msg.get('subject', 'No subject'))
         except UnicodeError as e:
-            prefix = f"[{logging_id}] " if logging_id else ""
-            logger.error(f"{prefix}Failed to decode header field: {str(e)}")
+            prefix = f'[{logging_id}] ' if logging_id else ''
+            logger.error(f'{prefix}Failed to decode header field: {str(e)}')
 
-        msg_date = msg.get("date", "")
-        self.date = email.utils.parsedate_to_datetime(msg.get("date", "")) \
-            if msg_date else None
-        self.formatted_date = self.date.strftime("%Y-%m-%d, %H:%M") \
-            if self.date else "No date"
+        msg_date = msg.get('date', '')
+        self.date = (
+            email.utils.parsedate_to_datetime(msg.get('date', ''))
+            if msg_date
+            else None
+        )
+        self.formatted_date = (
+            self.date.strftime('%Y-%m-%d, %H:%M') if self.date else 'No date'
+        )
 
         self.html = f"""
 <table style="font-family: serif;
@@ -163,15 +174,16 @@ def _embed_imgs(html_content: str, attachments: dict) -> str:
         for cid, attachment in attachments.items():
             content_type = attachment['content_type']
             content = base64.b64encode(attachment['content']).decode('utf-8')
-            data_uri = f"data:{content_type};base64,{content}"
+            data_uri = f'data:{content_type};base64,{content}'
 
             # Replace CID references in HTML
-            html_content = html_content.replace(f"cid:{cid}", data_uri)
+            html_content = html_content.replace(f'cid:{cid}', data_uri)
     return html_content
 
 
-def _decode_to_str(bytes_content: bytes, content_charset: str,
-                   content_transfer_encoding: str) -> str:
+def _decode_to_str(
+    bytes_content: bytes, content_charset: str, content_transfer_encoding: str
+) -> str:
     """Robustly decode bytes to string with fallback handling.
 
     Implements a multi-stage decoding strategy to handle various email content
@@ -206,7 +218,7 @@ def _decode_to_str(bytes_content: bytes, content_charset: str,
         >>> _decode_to_str(b'\\xff\\xfe', 'utf-8', ')  # Invalid UTF-8
         '��'
     """
-    decoded = ""
+    decoded = ''
 
     if isinstance(bytes_content, bytes):
         logger.debug(f'bytes: {str(bytes_content)[:100]}...')
@@ -226,7 +238,9 @@ def _decode_to_str(bytes_content: bytes, content_charset: str,
             except (UnicodeDecodeError, LookupError):
                 # If UTF-8 fails, try the original raw-unicode-escape workaround
                 try:
-                    decoded = bytes_content.decode('raw-unicode-escape', errors='strict')
+                    decoded = bytes_content.decode(
+                        'raw-unicode-escape', errors='strict'
+                    )
                     bytes_content = decoded.encode()
                 except (UnicodeDecodeError, UnicodeEncodeError):
                     pass
@@ -235,7 +249,9 @@ def _decode_to_str(bytes_content: bytes, content_charset: str,
             decoded = bytes_content.decode(content_charset)
         except (UnicodeDecodeError, LookupError):
             # Fallback for binary data/mismatched charsets
-            logger.warning(f"Strict decode failed for {content_charset}. Using 'replace' mode.")
+            logger.warning(
+                f"Strict decode failed for {content_charset}. Using 'replace' mode."
+            )
             decoded = bytes_content.decode(content_charset, errors='replace')
 
         # Handle unicode escape patterns (e.g., \u00a0)
@@ -246,13 +262,14 @@ def _decode_to_str(bytes_content: bytes, content_charset: str,
                 logger.debug(f'unicode escaped decoded : {decoded[:100]}...')
         except Exception as e:
             # If escape decoding fails (common in binary noise), keep the 'replace' version
-            logger.debug(f"Unicode escape decoding skipped: {e}")
+            logger.debug(f'Unicode escape decoding skipped: {e}')
 
     return decoded
 
 
-def _walk_eml(msg: email.message.Message, logging_id: str | None = None) -> \
-        tuple[str, list[_Attachment]]:
+def _walk_eml(
+    msg: email.message.Message, logging_id: str | None = None
+) -> tuple[str, list[_Attachment]]:
     """Extract and process all MIME parts from an email message.
 
     Walks through all parts of a MIME multipart email message, extracting text
@@ -301,8 +318,8 @@ def _walk_eml(msg: email.message.Message, logging_id: str | None = None) -> \
     Note:
         Skips parts with no payload or non-bytes payloads.
     """
-    html_content = ""
-    plain_text_content = ""
+    html_content = ''
+    plain_text_content = ''
     cid_attachments = {}
     attachments: list[_Attachment] = list()
 
@@ -321,21 +338,25 @@ def _walk_eml(msg: email.message.Message, logging_id: str | None = None) -> \
             continue
 
         # We allow 'inline' here to capture text bodies marked as inline
-        if (content_type == 'text/plain' or content_type == 'text/html') and \
-           (content_disposition is None or content_disposition == 'inline'):
-
-            decoded_payload = _decode_to_str(payload, content_charset,
-                                             content_transfer_encoding=_get_cte(part))
+        if (content_type == 'text/plain' or content_type == 'text/html') and (
+            content_disposition is None or content_disposition == 'inline'
+        ):
+            decoded_payload = _decode_to_str(
+                payload,
+                content_charset,
+                content_transfer_encoding=_get_cte(part),
+            )
 
             if content_type == 'text/plain':
                 plain_text_content += decoded_payload
-            elif content_type == "text/html":
+            elif content_type == 'text/html':
                 html_content += decoded_payload
 
         # Handle Attachments AND Inline Files
-        elif (content_disposition == 'attachment' or
-              content_disposition == 'inline'):
-
+        elif (
+            content_disposition == 'attachment'
+            or content_disposition == 'inline'
+        ):
             filename = part.get_filename()
             is_image = content_type.startswith('image/')
 
@@ -343,8 +364,8 @@ def _walk_eml(msg: email.message.Message, logging_id: str | None = None) -> \
             # 1. Marked 'attachment' OR
             # 2. Marked 'inline' BUT is not an image (like your .doc file)
             should_save_as_attachment = (
-                content_disposition == 'attachment' or
-                (content_disposition == 'inline' and not is_image)
+                content_disposition == 'attachment'
+                or (content_disposition == 'inline' and not is_image)
             )
 
             if should_save_as_attachment and filename:
@@ -352,8 +373,11 @@ def _walk_eml(msg: email.message.Message, logging_id: str | None = None) -> \
                 filesize = sys.getsizeof(payload)
                 _hash = hashlib.md5()
                 _hash.update(payload)
-                attachments.append(_Attachment(name=filename, size=filesize,
-                                              md5sum=_hash.hexdigest()))
+                attachments.append(
+                    _Attachment(
+                        name=filename, size=filesize, md5sum=_hash.hexdigest()
+                    )
+                )
 
             # Handle Inline Images (rendering)
             if is_image:
@@ -365,16 +389,20 @@ def _walk_eml(msg: email.message.Message, logging_id: str | None = None) -> \
                     cid_attachments[cid] = {
                         'filename': filename,
                         'content': payload,
-                        'content_type': content_type
+                        'content_type': content_type,
                     }
 
-    html_content = _embed_imgs(html_content, cid_attachments) \
-        if html_content else markdown(plain_text_content)
+    html_content = (
+        _embed_imgs(html_content, cid_attachments)
+        if html_content
+        else markdown(plain_text_content)
+    )
     return (html_content, attachments)
 
 
-def _get_output_base_path(date: datetime.datetime | None,
-                         subject: str, output_dir: Path) -> Path:
+def _get_output_base_path(
+    date: datetime.datetime | None, subject: str, output_dir: Path
+) -> Path:
     """Generate output PDF filename from email metadata.
 
     Creates a sanitized filename in the format: {date}-{subject}.pdf
@@ -401,16 +429,16 @@ def _get_output_base_path(date: datetime.datetime | None,
         Path('/out/2024-01-15-Meeting_Notes.pdf')
     """
     # Format date for filename prefix
-    file_date = date.strftime("%Y-%m-%d") if date else "nodate"
+    file_date = date.strftime('%Y-%m-%d') if date else 'nodate'
 
     # Create sanitized subject for filename
-    safe_subject = re.sub(r'[<>:"/\\|?*]', "", subject)  # Remove illegal chars
+    safe_subject = re.sub(r'[<>:"/\\|?*]', '', subject)  # Remove illegal chars
     safe_subject = safe_subject.replace(
-        " ", "_"
+        ' ', '_'
     )  # Replace spaces with underscores
 
     # Create base output filename
-    base_filename = f"{file_date}-{safe_subject}.pdf"
+    base_filename = f'{file_date}-{safe_subject}.pdf'
     output_path = output_dir / Path(base_filename)
 
     return output_path
@@ -453,8 +481,9 @@ def _get_exclusive_outfile(outfile_path: Path) -> BufferedWriter:
 
     counter = 1
     while outfile.name == os.devnull:
-        new_outfile_path = Path(outfile_path.parent) / \
-            Path(f"{outfile_path.stem}_{counter}{outfile_path.suffix}")
+        new_outfile_path = Path(outfile_path.parent) / Path(
+            f'{outfile_path.stem}_{counter}{outfile_path.suffix}'
+        )
         try:
             outfile = open(new_outfile_path, 'xb')
         except OSError as e:
@@ -488,9 +517,10 @@ def _get_filepaths(input_dir: Path) -> list[Path]:
     else:
         # Ugly old syntax
         filepaths = [
-                path for path in input_dir.glob("**/*")
-                if fnmatch.fnmatchcase(path.name.lower(), eml_pat)
-                ]
+            path
+            for path in input_dir.glob('**/*')
+            if fnmatch.fnmatchcase(path.name.lower(), eml_pat)
+        ]
     return filepaths
 
 
@@ -514,18 +544,24 @@ def _generate_attachment_list(attachments: list[_Attachment]) -> str:
     """
     html = ''
     if attachments:
-        html += '<table style="font-family: serif; ' \
-                              'margin-bottom: 20px;' \
-                              'border-spacing: 1rem 0;' \
-                              'text-align: left;">'
-        html += '<thead><tr><th colspan="3">Attachments:</th></tr>' \
-                '<tr><th scope="col">Name</th>' \
-                '<th scope="col">Size</th>' \
-                '<th scope="col">MD5sum</th></tr></thead>'
+        html += (
+            '<table style="font-family: serif; '
+            'margin-bottom: 20px;'
+            'border-spacing: 1rem 0;'
+            'text-align: left;">'
+        )
+        html += (
+            '<thead><tr><th colspan="3">Attachments:</th></tr>'
+            '<tr><th scope="col">Name</th>'
+            '<th scope="col">Size</th>'
+            '<th scope="col">MD5sum</th></tr></thead>'
+        )
         for at in attachments:
-            html += f'<tr><td>{at.name}</td><td>{size(at.size)}</td>' \
-                    f'<td>{at.md5sum}</td></tr>'
-        html += "</table>"
+            html += (
+                f'<tr><td>{at.name}</td><td>{size(at.size)}</td>'
+                f'<td>{at.md5sum}</td></tr>'
+            )
+        html += '</table>'
 
     return html
 
@@ -547,7 +583,10 @@ def _get_cte(message: email.message.Message) -> str:
         cte = str(cte).strip().lower()
     return cte
 
-def _generate_html(msg: email.message.Message, logging_id: str | None = None) -> str:
+
+def _generate_html(
+    msg: email.message.Message, logging_id: str | None = None
+) -> str:
     """Generates HTML for a given message.
 
     Args:
@@ -571,9 +610,15 @@ def _generate_html(msg: email.message.Message, logging_id: str | None = None) ->
 """
     return email_header, html_content
 
-def process_eml(eml_path: Path, output_path: Path, page: str = 'a4',
-                debug_html: bool = False, unsafe: bool = False,
-                logging_id: str | None = None):
+
+def process_eml(
+    eml_path: Path,
+    output_path: Path,
+    page: str = 'a4',
+    debug_html: bool = False,
+    unsafe: bool = False,
+    logging_id: str | None = None,
+):
     """Process a single EML file and generate a PDF.
 
     1. Parse EML file with email.message_from_binary_file() (fallback to message_from_file())
@@ -610,18 +655,20 @@ def process_eml(eml_path: Path, output_path: Path, page: str = 'a4',
         Output filename format: {date}-{subject}.pdf
     """
     # Use filename as default logging_id if not provided
-    effective_logging_id = logging_id if logging_id is not None else eml_path.name
-    prefix = f"[{effective_logging_id}] "
-    
+    effective_logging_id = (
+        logging_id if logging_id is not None else eml_path.name
+    )
+    prefix = f'[{effective_logging_id}] '
+
     logger.info(f'{prefix}Processing {eml_path}')
     # Open and parse the .eml file
     # Try binary mode first to handle various encodings (ISO-8859-1, etc.)
     try:
-        with open(eml_path, "rb") as f:
+        with open(eml_path, 'rb') as f:
             msg = email.message_from_binary_file(f)
     except UnicodeDecodeError:
         # Fall back to text mode for UTF-8 encoded files
-        with open(eml_path, "r", encoding="utf-8") as f:
+        with open(eml_path, 'r', encoding='utf-8') as f:
             msg = email.message_from_file(f)
 
     email_header, html_content = _generate_html(msg, effective_logging_id)
@@ -629,9 +676,9 @@ def process_eml(eml_path: Path, output_path: Path, page: str = 'a4',
     # Convert to PDF if HTML content is found
     if html_content:
         if output_path.is_dir():
-            output_path = _get_output_base_path(email_header.date,
-                                                email_header.subject,
-                                                output_path)
+            output_path = _get_output_base_path(
+                email_header.date, email_header.subject, output_path
+            )
         generate_pdf(
             html_content=html_content,
             outfile_path=output_path,
@@ -641,11 +688,19 @@ def process_eml(eml_path: Path, output_path: Path, page: str = 'a4',
             logging_id=effective_logging_id,
         )
     else:
-        logger.warning(f"{prefix}No plain text or HTML content found "
-                       f"in {eml_path}. Skipping...")
+        logger.warning(
+            f'{prefix}No plain text or HTML content found '
+            f'in {eml_path}. Skipping...'
+        )
 
-def process_eml_bytes(contents: bytes, page: str = 'a4', debug_html: bool = False, 
-                     unsafe: bool = False, logging_id: str | None = None) -> bytes:
+
+def process_eml_bytes(
+    contents: bytes,
+    page: str = 'a4',
+    debug_html: bool = False,
+    unsafe: bool = False,
+    logging_id: str | None = None,
+) -> bytes:
     """Generates a PDF from an EML file in memory.
 
     Same as process_eml() but accepts and returns bytes instead of files.
@@ -670,10 +725,14 @@ def process_eml_bytes(contents: bytes, page: str = 'a4', debug_html: bool = Fals
     )
 
 
-def process_all_emls_in_dir(input_dir: Path, output_dir: Path,
-                            number_of_procs: int = 1,
-                            debug_html: bool = False,
-                            page: str = 'a4', unsafe: bool = False):
+def process_all_emls_in_dir(
+    input_dir: Path,
+    output_dir: Path,
+    number_of_procs: int = 1,
+    debug_html: bool = False,
+    page: str = 'a4',
+    unsafe: bool = False,
+):
     """Process all EML files in a directory to PDFs with optional multiprocessing.
 
     Main entry point for batch processing of email files. Handles directory
@@ -721,31 +780,34 @@ def process_all_emls_in_dir(input_dir: Path, output_dir: Path,
         for ep in eml_file_paths:
             process_eml(ep, Path(output_dir), page, debug_html, unsafe)
     else:
-        p_args = ((ep, Path(output_dir), page, debug_html, unsafe)
-                  for ep in eml_file_paths)
+        p_args = (
+            (ep, Path(output_dir), page, debug_html, unsafe)
+            for ep in eml_file_paths
+        )
         with Pool(number_of_procs) as p:
             p.starmap(process_eml, p_args)
 
-    print("All .eml files processed.")
+    print('All .eml files processed.')
 
 
 def _set_log_levels():
     """Tune down Weasyprint warnings."""
-    if (logger.level == logging.NOTSET):
+    if logger.level == logging.NOTSET:
         logger.setLevel(logging.WARNING)
 
     wp_logger = logging.getLogger('weasyprint')
     ft_logger = logging.getLogger('fontTools')
 
-    if (logger.level == logging.DEBUG):
+    if logger.level == logging.DEBUG:
         quiet_loglevel = logging.WARNING
-    elif (logger.level in [logging.INFO, logging.WARNING]):
+    elif logger.level in [logging.INFO, logging.WARNING]:
         quiet_loglevel = logging.ERROR
-    elif (logger.level == logging.ERROR):
+    elif logger.level == logging.ERROR:
         quiet_loglevel = logging.ERROR + 10  # This means wp will shut up!
     else:
-        raise ValueError('Logger contains an unexpected level: '
-                         f'{logger.level}')
+        raise ValueError(
+            f'Logger contains an unexpected level: {logger.level}'
+        )
 
     for lgr in [wp_logger, ft_logger]:
         lgr.setLevel(quiet_loglevel)
@@ -815,7 +877,7 @@ def generate_pdf(
         Exception: Logs error if PDF generation fails, but does not re-raise.
     """
     # Build logging prefix
-    prefix = f"[{logging_id}] " if logging_id else ""
+    prefix = f'[{logging_id}] ' if logging_id else ''
 
     _set_log_levels()
 
@@ -838,13 +900,14 @@ def generate_pdf(
                 presentational_hints=True,
                 stylesheets=[css],
             )
-            logger.info(f"{prefix}Converted to PDF successfully.")
+            logger.info(f'{prefix}Converted to PDF successfully.')
             return None
         else:
-            return html.write_pdf(target=None, presentational_hints=True,
-                                  stylesheets=[css])
+            return html.write_pdf(
+                target=None, presentational_hints=True, stylesheets=[css]
+            )
     except Exception as e:
-        logger.error(f"{prefix}Failed to convert: {str(e)}")
+        logger.error(f'{prefix}Failed to convert: {str(e)}')
         return None
 
 
@@ -874,7 +937,7 @@ def header_to_html(header_str: str) -> str:
         'Test &lt;tag&gt;'
     """
     headers = email.header.decode_header(header_str)
-    headers_as_string = ""
+    headers_as_string = ''
     # decoded headers can have multiple parts. Concat them.
     for head in headers:
         # If a header contains a str, don't try to decode.
