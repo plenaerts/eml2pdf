@@ -154,3 +154,27 @@ help = "Complete development environment setup"
 shell = """
 pip install -e ".[dev]" && echo '\nDevelopment environment ready!' && echo 'Try: poe test, poe docs, poe build'
 """
+
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+    # mccabe
+    "C90",
+]
