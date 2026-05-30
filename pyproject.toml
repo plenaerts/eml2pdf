@@ -149,6 +149,31 @@ sequence = [
 help = "Run all tests with coverage"
 cmd = "poe coverage"
 
+# Ruff tasks
+[tool.poe.tasks.lint]
+help = "Run ruff linter"
+cmd = "ruff check ."
+
+[tool.poe.tasks.lint-fix]
+help = "Auto-fix lint issues"
+cmd = "ruff check --fix ."
+
+[tool.poe.tasks.format]
+help = "Format code with ruff"
+cmd = "ruff format ."
+
+[tool.poe.tasks.format-check]
+help = "Check formatting without applying"
+cmd = "ruff format --check ."
+
+[tool.poe.tasks.quality]
+help = "Run linting, formatting check, and tests"
+sequence = [
+    { cmd = "ruff check ." },
+    { cmd = "ruff format --check ." },
+    { cmd = "poe test" }
+]
+
 [tool.poe.tasks.dev-setup]
 help = "Complete development environment setup"
 shell = """
