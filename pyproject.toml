@@ -43,6 +43,8 @@ dev = [
     "poethepoet>=0.24.0",  # Task runner
     "build>=1.0.0",  # For building distributions
     "twine>=4.0.0",  # For uploading to PyPI
+    "ruff",
+    "pymarkdownlnt",
 ]
 # Install with: pip install -e ".[docs]"
 docs = [
@@ -145,32 +147,20 @@ sequence = [
 ]
 
 # Development workflow tasks
-[tool.poe.tasks.check]
-help = "Run all tests with coverage"
-cmd = "poe coverage"
-
-# Ruff tasks
-[tool.poe.tasks.lint]
-help = "Run ruff linter"
-cmd = "ruff check ."
-
 [tool.poe.tasks.lint-fix]
-help = "Auto-fix lint issues"
-cmd = "ruff check --fix ."
+help = "Auto-fix all lint issues (Python and Markdown)"
+sequence = [
+    { cmd = "ruff check --fix ." },
+    { cmd = "ruff format ." },
+    { cmd = "pymarkdownlnt fix **/*.md" },
+]
 
-[tool.poe.tasks.format]
-help = "Format code with ruff"
-cmd = "ruff format ."
-
-[tool.poe.tasks.format-check]
-help = "Check formatting without applying"
-cmd = "ruff format --check ."
-
-[tool.poe.tasks.quality]
-help = "Run linting, formatting check, and tests"
+[tool.poe.tasks.check]
+help = "Run all checks: lint, format, and tests"
 sequence = [
     { cmd = "ruff check ." },
     { cmd = "ruff format --check ." },
+    { cmd = "pymarkdownlnt scan **/*.md" },
     { cmd = "poe test" }
 ]
 

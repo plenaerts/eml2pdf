@@ -59,6 +59,16 @@ Coverage reports are generated in:
 - Terminal: Shows missing lines
 - HTML: `htmlcov/index.html`
 
+### Linting and Formatting
+
+```bash
+# Auto-fix all lint issues (Python and Markdown)
+poe lint-fix
+
+# Run all checks: lint, format, and tests
+poe check
+```
+
 ### Building Documentation
 
 ```bash
