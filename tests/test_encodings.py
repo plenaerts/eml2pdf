@@ -87,7 +87,7 @@ class TestEmls(unittest.TestCase):
             with open(eml_path / Path(eml[0]), 'rb') as f:
                 eml_msg = email.message_from_binary_file(f)
             with self.subTest(eml=eml[0]):
-                eml_html = libeml2pdf._walk_eml(eml_msg, eml[0])[0]
+                eml_html = libeml2pdf._walk_eml(eml_msg)[0]
                 self.assertEqual(eml_html, eml[1].strip())
 
     def test_attachments(self):
@@ -95,7 +95,7 @@ class TestEmls(unittest.TestCase):
         at_eml = 'attachments.eml'
         with open(eml_path / Path(at_eml), 'rb') as f:
             eml_msg = email.message_from_binary_file(f)
-        ats_from_eml = libeml2pdf._walk_eml(eml_msg, at_eml)[1]
+        ats_from_eml = libeml2pdf._walk_eml(eml_msg)[1]
         for at in ats_from_eml:
             with self.subTest(at=at):
                 name = at.name
@@ -108,15 +108,15 @@ class TestEmls(unittest.TestCase):
                 self.assertEqual(f_size, at.size)
 
     def test_inline_doc_is_captured_as_attachment(self):
-        """Verify that a .doc file with 'Content-Disposition: inline' 
+        """Verify that a .doc file with 'Content-Disposition: inline'
         is correctly identified as an attachment.
         """
         at_eml = 'email_with_doc_attachment.eml'
         with open(eml_path / Path(at_eml), 'rb') as f:
             eml_msg = email.message_from_binary_file(f)
-        attachments_from_eml = libeml2pdf._walk_eml(eml_msg, at_eml)[1]
+        attachments_from_eml = libeml2pdf._walk_eml(eml_msg)[1]
         # Check if the .doc was found in the attachments list
-        self.assertEqual(len(attachments_from_eml), 1, f"Should have found 1 attachment {attachments_from_eml}") 
+        self.assertEqual(len(attachments_from_eml), 1, f"Should have found 1 attachment {attachments_from_eml}")
 
     def test_plain_and_html_inline(self):
         """Emls with both plain text and html inline parts render once."""
@@ -124,7 +124,7 @@ class TestEmls(unittest.TestCase):
                    get_tgt_html(Path('plain_and_html_inline.html')))
         with open(eml_path / Path(phi_eml[0]), 'rb') as f:
             eml_msg = email.message_from_binary_file(f)
-            eml_html = libeml2pdf._walk_eml(eml_msg, phi_eml)[0]
+            eml_html = libeml2pdf._walk_eml(eml_msg)[0]
             self.assertEqual(eml_html.strip(), phi_eml[1].strip())
 
 

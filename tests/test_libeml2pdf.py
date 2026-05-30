@@ -28,6 +28,31 @@ class TestProcessEml(unittest.TestCase):
         self.assertGreater(self.output_pdf.stat().st_size, 0)
 
 
+class TestProcessEmlBytes(unittest.TestCase):
+    """Test the process_eml_bytes function."""
+
+    def setUp(self):
+        self.test_dir = Path(tempfile.mkdtemp())
+        self.test_eml = test_eml_path / 'plain_text.eml'
+        self.output_pdf = self.test_dir / "output.pdf"
+
+    def tearDown(self):
+        """Clean up test environment."""
+        shutil.rmtree(self.test_dir, ignore_errors=True)
+
+    def test_process_eml_basic(self):
+        # First, process the eml as a file as usual.
+        libeml2pdf.process_eml(self.test_eml, self.output_pdf)
+        self.assertTrue(self.output_pdf.exists())
+        self.assertGreater(self.output_pdf.stat().st_size, 0)
+
+        # Now process the raw bytes and ensure they match
+        pdf_bytes = self.test_eml.read_bytes()
+        file_output = self.output_pdf.read_bytes()
+        bytes_output = libeml2pdf.process_eml_bytes(pdf_bytes)
+        self.assertEqual(file_output, bytes_output)
+
+
 class TestProcessAllEmlsInDir(unittest.TestCase):
     """Test the process_all_emls_in_dir function."""
 
