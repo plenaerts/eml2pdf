@@ -1,13 +1,10 @@
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.header import Header
-from email.utils import formatdate
-from pathlib import Path
+"""Common test data and utilities."""
+
 from dataclasses import dataclass
 
 
 @dataclass
-class TestMail:
+class Eml:
     """Holds to, from, subject, msg in a specific encoding."""
 
     filename: str
@@ -19,7 +16,7 @@ class TestMail:
 
 
 mails = [
-    TestMail(
+    Eml(
         to='محمد أحمد <mohammed.ahmed@example.com>',
         _from='علي السعيد <>',
         subject='البريد الإلكتروني التجريبي',
@@ -27,7 +24,7 @@ mails = [
         enc='utf-8',
         filename='test_arabic.eml',
     ),
-    TestMail(
+    Eml(
         to='鈴木 太郎 <taro.suzuki@example.com>',
         _from='山田 花子 <hanako.yamada@example.com>',
         subject='テストメール',
@@ -35,7 +32,7 @@ mails = [
         enc='shift_jis',
         filename='test_shift-js.eml',
     ),
-    TestMail(
+    Eml(
         to='王小明 <xiaoming.wang@example.com>',
         _from='李华 <li.hua@example.com>',
         subject='测试电子邮件',
@@ -43,7 +40,7 @@ mails = [
         enc='utf-8',
         filename='test_chinese.eml',
     ),
-    TestMail(
+    Eml(
         to='Gérard Lévêque',
         _from='gerard.leveque@example.com',
         subject='E-mail de tâtonnement',
@@ -51,7 +48,7 @@ mails = [
         enc='iso-8859-1',
         filename='test_french.eml',
     ),
-    TestMail(
+    Eml(
         to='山田 花子 <hanako.yamada@example.com>',
         _from='田中 一郎 <ichiro.tanaka@example.com>',
         subject='テストメール',
@@ -59,7 +56,7 @@ mails = [
         enc='utf-8',
         filename='test_japanese-utf8.eml',
     ),
-    TestMail(
+    Eml(
         to='Günther Müller <guenther.mueller@example.com>',
         _from='Jörg Weiß <joerg.weiss@example.com>',
         subject='Prüf-E-Mail',
@@ -68,34 +65,3 @@ mails = [
         filename='test_german.eml',
     ),
 ]
-
-
-def main():
-    # Create a directory to save the EML files
-    output_dir = Path('test_data')
-    output_dir.mkdir(exist_ok=True, parents=True)
-
-    # Generate EML files with encoded headers
-    file_paths = []
-    for m in mails:
-        # Create a MIME message
-        msg = MIMEMultipart()
-        msg['From'] = Header(m._from, m.enc).encode()
-        msg['To'] = Header(m.to, m.enc).encode()
-        msg['Subject'] = Header(m.subject, m.enc).encode()
-        msg['Date'] = formatdate(localtime=True)
-
-        # Attach text with the specified encoding
-        text = MIMEText(m.msg, 'plain', m.enc)
-        msg.attach(text)
-
-        # Save the EML file
-        file_name = Path(m.filename)
-        file_path = output_dir / file_name
-        with open(file_path, 'w', encoding='utf-8') as file:
-            file.write(msg.as_string())
-        file_paths.append(file_path)
-
-
-if __name__ == '__main__':
-    main()

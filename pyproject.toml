@@ -164,6 +164,35 @@ sequence = [
     { cmd = "poe test" }
 ]
 
+[tool.poe.tasks.check-deps]
+help = "Show available newer versions for main dependencies"
+sequence = [
+    { cmd = "pip index versions weasyprint" },
+    { cmd = "pip index versions markdown" },
+    { cmd = "pip index versions hurry.filesize" },
+    { cmd = "pip index versions beautifulsoup4" },
+]
+
+[tool.poe.tasks.check-dev-deps]
+help = "Show available newer versions for dev dependencies"
+sequence = [
+    { cmd = "pip index versions pytest" },
+    { cmd = "pip index versions pytest-cov" },
+    { cmd = "pip index versions sphinx" },
+    { cmd = "pip index versions sphinx-rtd-theme" },
+    { cmd = "pip index versions myst-parser" },
+    { cmd = "pip index versions ruff" },
+    { cmd = "pip index versions pymarkdownlnt" },
+]
+
+[tool.poe.tasks.check-debian-deps]
+help = "Check if dependencies match Debian stable versions"
+cmd = "python scripts/check_debian_deps.py"
+
+[tool.poe.tasks.generate-test-emls]
+help = "Generate test EML files"
+cmd = "python scripts/generate_test_emls.py"
+
 [tool.poe.tasks.dev-setup]
 help = "Complete development environment setup"
 shell = """

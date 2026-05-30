@@ -3,7 +3,7 @@ from pathlib import Path
 import email
 from html import escape
 from eml2pdf import libeml2pdf
-from . import generate_test_emls
+from .common import Eml, mails as base_mails
 import os
 import hashlib
 import sys
@@ -12,11 +12,11 @@ import sys
 eml_path = Path('tests/test_data')
 
 # These mails definitions are used to generate emls in test data
-mails = {m.filename: m for m in generate_test_emls.mails}
+mails = {m.filename: m for m in base_mails}
 
 # Adding two extra email msgs. They are real eml's.
 more_mails = mails | {
-    'simple_plain_and_html_embedded_img.eml': generate_test_emls.TestMail(
+    'simple_plain_and_html_embedded_img.eml': Eml(
         _from='First Last <first.last@outlook.com>',
         to='"Last, First" <first.last@outlook.com>',
         subject='This is a test mail with embedded imgs',
@@ -24,7 +24,7 @@ more_mails = mails | {
         enc='utf-8',
         filename='simple_plain_and_html_embedded_img.eml',
     ),
-    'train_ticket.eml': generate_test_emls.TestMail(
+    'train_ticket.eml': Eml(
         to='first.last@outlook.com',
         _from='"NMBS/SNCB:" <no-reply@belgiantrain.be>',
         subject='NMBS Mobile Ticket NL',
@@ -32,7 +32,7 @@ more_mails = mails | {
         enc='utf-8',
         filename='train_ticket.eml',
     ),
-    'plain_lorem_ipsum.eml': generate_test_emls.TestMail(
+    'plain_lorem_ipsum.eml': Eml(
         to='recipient@example.com',
         _from='sender@example.com',
         subject='Test Email with Lorem Ipsum',
