@@ -1,25 +1,25 @@
+import base64
+import datetime
 import email
-import email.utils
 import email.header
 import email.message
-from html import escape
-import re
-import datetime
-from pathlib import Path
-import base64
-import sys
+import email.utils
 import fnmatch
-import os
-from io import BufferedWriter
-import logging
-from multiprocessing import Pool
 import hashlib
+import logging
+import os
+import re
+import sys
 from dataclasses import dataclass
+from html import escape
+from io import BufferedWriter
+from multiprocessing import Pool
+from pathlib import Path
 from typing import overload
 
-from weasyprint import HTML, CSS  # type: ignore
-from markdown import markdown
 from hurry.filesize import size  # type: ignore
+from markdown import markdown
+from weasyprint import CSS, HTML  # type: ignore
 
 from . import security
 
@@ -75,19 +75,23 @@ class _Header:
     Handles encoded headers and converts them to HTML-safe strings.
 
     Attributes:
-        from_addr (str): Sender address. Defaults to "Not decoded." if parsing fails.
-        to_addr (str): Recipient address. Defaults to "Not decoded." if parsing fails.
-        subject (str): Email subject. Defaults to "Not decoded." if parsing fails.
+        from_addr (str): Sender address. Defaults to "Not decoded."
+            if parsing fails.
+        to_addr (str): Recipient address. Defaults to "Not decoded." if parsing
+            fails.
+        subject (str): Email subject. Defaults to "Not decoded." if parsing
+            fails.
         html (str): HTML table representation of the header fields.
-        formatted_date (str): Human-readable date string in format "YYYY-MM-DD, HH:MM".
-            Defaults to "No date" if date header is missing.
-        date (datetime.datetime | None): Parsed datetime object from the Date header.
-            None if date header is missing or unparseable.
+        formatted_date (str): Human-readable date string in format
+            "YYYY-MM-DD, HH:MM". Defaults to "No date" if date header is
+            missing.
+        date (datetime.datetime | None): Parsed datetime object from the Date
+            header. None if date header is missing or unparseable.
 
     Note:
         Headers are decoded using email.header.decode_header() and HTML-escaped
-        to prevent XSS vulnerabilities. UnicodeErrors during decoding are logged
-        but don't stop processing.
+        to prevent XSS vulnerabilities. UnicodeErrors during decoding are
+        logged but don't stop processing.
     """
 
     from_addr = 'Not decoded.'
@@ -147,10 +151,11 @@ class _Header:
 
 
 def _embed_imgs(html_content: str, attachments: dict) -> str:
-    """Embed inline images into HTML by replacing CID references with data URIs.
+    """Embed inline images in HTML by replacing CID references with data URIs.
 
     Converts Content-ID (CID) references in HTML to inline data URIs,
-    allowing images to be embedded directly in the PDF without external references.
+    allowing images to be embedded directly in the PDF without external
+    references.
 
     Processing:
         1. For each CID attachment collected during message walking
@@ -159,9 +164,11 @@ def _embed_imgs(html_content: str, attachments: dict) -> str:
         4. Replace all cid:{cid} references in HTML with the data URI
 
     Args:
-        html_content (str): HTML content potentially containing cid: image references.
-        attachments (dict): Dictionary mapping CID to attachment data. Each value
-            should have 'content' (bytes), 'content_type' (str), and 'filename' (str).
+        html_content (str): HTML content potentially containing cid: image
+            references.
+        attachments (dict): Dictionary mapping CID to attachment data. Each
+            value should have 'content' (bytes), 'content_type' (str), and
+            'filename' (str).
 
     Returns:
         str: HTML content with all CID references replaced by data URIs.
@@ -191,19 +198,22 @@ def _decode_to_str(
 
     Decoding Strategy:
         1. **Strict Decoding**: Attempts to decode using the specified charset
-        2. **Fallback with Replace**: If strict decoding fails, uses 'replace' mode
-           to substitute invalid bytes with � (U+FFFD REPLACEMENT CHARACTER)
-        3. **Unicode Escape Handling**: Detects and processes unicode escape sequences
-           like \\u00a0 or \\U00000000 that some email clients use
+        2. **Fallback with Replace**: If strict decoding fails, uses 'replace'
+            mode to substitute invalid bytes with � (U+FFFD REPLACEMENT
+            CHARACTER)
+        3. **Unicode Escape Handling**: Detects and processes unicode escape
+            sequences like \\u00a0 or \\U00000000 that some email clients use
 
     Error Handling:
-        - UnicodeDecodeError: Byte sequence invalid for specified charset → fallback
+        - UnicodeDecodeError: Byte sequence invalid for specified charset
+            → fallback
         - LookupError: Charset name unknown or not supported → fallback
         - Exception during escape decoding: Keep the 'replace' version
 
     Args:
         bytes_content (bytes): The raw byte content to decode.
-        content_charset (str): The character encoding name (e.g., 'utf-8', 'iso-8859-1').
+        content_charset (str): The character encoding name (e.g., 'utf-8',
+            'iso-8859-1').
         content_transfer_encoding (str): The content transfer encoding (e.g.,
             '8bit', 'binary'). Others may pop up:
             https://www.w3.org/Protocols/rfc1341/5_Content-Transfer-Encoding.html
@@ -224,19 +234,23 @@ def _decode_to_str(
         logger.debug(f'bytes: {str(bytes_content)[:100]}...')
         logger.debug(f'charset: {content_charset}')
 
-        # workaround for CPython's incorrect handling of native utf-8 with 8-bit CTE
+        # workaround for CPython's incorrect handling of native utf-8 with
+        # 8-bit CTE
         # https://bugs.python.org/issue18271
         # https://github.com/python/cpython/issues/105285
         # https://github.com/python/cpython/pull/105306
-        # Only apply raw-unicode-escape if UTF-8 decoding fails, to preserve UTF-8 emoji
+        # Only apply raw-unicode-escape if UTF-8 decoding fails, to preserve
+        # UTF-8 emoji
         if content_transfer_encoding == '8bit':
             try:
-                # First try UTF-8 decoding (preserves emoji and other UTF-8 content)
+                # First try UTF-8 decoding (preserves emoji and other UTF-8
+                # content)
                 decoded = bytes_content.decode('utf-8')
                 # If UTF-8 succeeds, we're done - skip the rest of the function
                 return decoded
             except (UnicodeDecodeError, LookupError):
-                # If UTF-8 fails, try the original raw-unicode-escape workaround
+                # If UTF-8 fails, try the original raw-unicode-escape
+                # workaround
                 try:
                     decoded = bytes_content.decode(
                         'raw-unicode-escape', errors='strict'
@@ -250,7 +264,8 @@ def _decode_to_str(
         except (UnicodeDecodeError, LookupError):
             # Fallback for binary data/mismatched charsets
             logger.warning(
-                f"Strict decode failed for {content_charset}. Using 'replace' mode."
+                f"Strict decode failed for {content_charset}. Using "
+                "'replace' mode."
             )
             decoded = bytes_content.decode(content_charset, errors='replace')
 
@@ -261,7 +276,8 @@ def _decode_to_str(
                 decoded = decoded.encode('utf-8').decode('unicode-escape')
                 logger.debug(f'unicode escaped decoded : {decoded[:100]}...')
         except Exception as e:
-            # If escape decoding fails (common in binary noise), keep the 'replace' version
+            # If escape decoding fails (common in binary noise), keep the
+            # 'replace' version
             logger.debug(f'Unicode escape decoding skipped: {e}')
 
     return decoded
@@ -285,20 +301,25 @@ def _walk_eml(
         **Text Content (plain/html)**:
             - Conditions: content_type is text/plain or text/html AND
               (content_disposition is None OR 'inline')
-            - Processing: Decode using _decode_to_str() and append to content strings
-            - Note: Multiple text parts are concatenated (handles multipart/alternative)
+            - Processing: Decode using _decode_to_str() and append to content
+                strings
+            - Note: Multiple text parts are concatenated (handles
+                multipart/alternative)
 
         **Attachments and Inline Files**:
             - Conditions: content_disposition is 'attachment' OR 'inline'
             - Classification:
               1. Marked 'attachment': Always saved to attachment list
-              2. Marked 'inline' + NOT image: Saved to attachment list (e.g., .doc, .xls)
-              3. Marked 'inline' + IS image: Used for rendering, optionally saved
+              2. Marked 'inline' + NOT image: Saved to attachment list
+                  (e.g., .doc, .xls)
+              3. Marked 'inline' + IS image: Used for rendering, optionally
+                  saved
             - Metadata: Filename, size (bytes), MD5 hash
 
         **Inline Images**:
             - Extract Content-ID (CID) from headers
-            - Store in cid_attachments with filename, binary content, content-type
+            - Store in cid_attachments with filename, binary content,
+                content-type
             - Later embedded via embed_imgs() by replacing cid: references
 
     Final Assembly:
@@ -311,9 +332,9 @@ def _walk_eml(
         logging_id (str | None): Optional identifier for logging context.
 
     Returns:
-        tuple[str, list[_Attachment]]: A tuple of (html_content, attachments) where
-            html_content is the rendered HTML and attachments is a list of
-            _Attachment objects with metadata.
+        tuple[str, list[_Attachment]]: A tuple of (html_content, attachments)
+            where html_content is the rendered HTML and attachments is a list
+            of _Attachment objects with metadata.
 
     Note:
         Skips parts with no payload or non-bytes payloads.
@@ -413,7 +434,8 @@ def _get_output_base_path(
         - Uses "nodate" prefix if date is None
 
     Args:
-        date (datetime.datetime | None): Email date from header. None if not available.
+        date (datetime.datetime | None): Email date from header. None if not
+            available.
         subject (str): Email subject line.
         output_dir (Path): Directory where the PDF will be saved.
 
@@ -421,11 +443,15 @@ def _get_output_base_path(
         Path: Complete output path for the PDF file.
 
     Note:
-        Does not check if the file exists or is writable. Use get_exclusive_outfile()
-        to handle filename conflicts.
+        Does not check if the file exists or is writable. Use
+        get_exclusive_outfile() to handle filename conflicts.
 
     Example:
-        >>> _get_output_base_path(datetime(2024, 1, 15), "Meeting Notes", Path("/out"))
+        >>> _get_output_base_path(
+            datetime(2024, 1, 15),
+            "Meeting Notes",
+            Path("/out")
+        )
         Path('/out/2024-01-15-Meeting_Notes.pdf')
     """
     # Format date for filename prefix
@@ -448,13 +474,13 @@ def _get_exclusive_outfile(outfile_path: Path) -> BufferedWriter:
     """Open output file exclusively with automatic conflict resolution.
 
     Attempts to open the file with exclusive creation ('xb' mode). If the file
-    already exists, automatically increments a counter suffix until an available
-    filename is found: filename_1.pdf, filename_2.pdf, etc.
+    already exists, automatically increments a counter suffix until an
+    available filename is found: filename_1.pdf, filename_2.pdf, etc.
 
     Multiprocessing Safety:
-        Uses exclusive creation to prevent race conditions when multiple processes
-        try to write to the same filename. Ensures each process gets a unique file
-        without overwriting.
+        Uses exclusive creation to prevent race conditions when multiple
+        processes try to write to the same filename. Ensures each process gets
+        a unique file without overwriting.
 
     Args:
         outfile_path (Path): Desired output file path.
@@ -464,8 +490,10 @@ def _get_exclusive_outfile(outfile_path: Path) -> BufferedWriter:
             WeasyPrint's HTML.write_pdf() method.
 
     Note:
-        File is opened in binary mode ('xb') for compatibility with WeasyPrint.
-        The exclusive flag ensures no existing file is overwritten.
+        1. File is opened in binary mode ('xb') for compatibility with
+            WeasyPrint. The exclusive flag ensures no existing file is
+            overwritten.
+        2. Do NOT forget to close the file!
 
     Example:
         If "report.pdf" exists:
@@ -473,10 +501,10 @@ def _get_exclusive_outfile(outfile_path: Path) -> BufferedWriter:
         <_io.BufferedWriter name='report_1.pdf'>
     """
     try:
-        outfile = open(outfile_path, 'xb')
+        outfile = open(outfile_path, 'xb') # noqa: SIM115
     except OSError as e:
         logger.debug(f'Could not open {outfile_path} exclusively. {e}')
-        outfile = open(os.devnull, 'wb')
+        outfile = open(os.devnull, 'wb') # noqa: SIM115
         outfile.close()  # We won't use devnull.
 
     counter = 1
@@ -485,7 +513,7 @@ def _get_exclusive_outfile(outfile_path: Path) -> BufferedWriter:
             f'{outfile_path.stem}_{counter}{outfile_path.suffix}'
         )
         try:
-            outfile = open(new_outfile_path, 'xb')
+            outfile = open(new_outfile_path, 'xb') # noqa: SIM115
         except OSError as e:
             logger.debug(f'Could not open {outfile_path} exclusively. {e}')
             counter += 1
@@ -527,8 +555,8 @@ def _get_filepaths(input_dir: Path) -> list[Path]:
 def _generate_attachment_list(attachments: list[_Attachment]) -> str:
     """Generate HTML table summarizing email attachments.
 
-    Creates an HTML table with columns for attachment name, human-readable size,
-    and MD5 hash for integrity verification.
+    Creates an HTML table with columns for attachment name, human-readable
+    size, and MD5 hash for integrity verification.
 
     Args:
         attachments (list[_Attachment]): List of attachment metadata objects.
@@ -576,12 +604,7 @@ def _get_cte(message: email.message.Message) -> str:
     Returns (str): the email message part CTE
     """
     cte = message.get('content-transfer-encoding', '')
-    if hasattr(cte, 'cte'):
-        cte = cte.cte
-    else:
-        # cte might be a Header, so for now stringify it.
-        cte = str(cte).strip().lower()
-    return cte
+    return cte.cte if hasattr(cte, 'cte') else str(cte).strip().lower()
 
 
 def _generate_html(
@@ -621,7 +644,8 @@ def process_eml(
 ):
     """Process a single EML file and generate a PDF.
 
-    1. Parse EML file with email.message_from_binary_file() (fallback to message_from_file())
+    1. Parse EML file with email.message_from_binary_file() (fallback to
+        message_from_file())
     2. Extract header (from/to/subject/date)
     3. Walk message parts to extract content and attachments
     4. Generate attachment list table
@@ -668,7 +692,7 @@ def process_eml(
             msg = email.message_from_binary_file(f)
     except UnicodeDecodeError:
         # Fall back to text mode for UTF-8 encoded files
-        with open(eml_path, 'r', encoding='utf-8') as f:
+        with open(eml_path, encoding='utf-8') as f:
             msg = email.message_from_file(f)
 
     email_header, html_content = _generate_html(msg, effective_logging_id)
@@ -733,7 +757,7 @@ def process_all_emls_in_dir(
     page: str = 'a4',
     unsafe: bool = False,
 ):
-    """Process all EML files in a directory to PDFs with optional multiprocessing.
+    """Process all EML files in a directory to PDFs.
 
     Main entry point for batch processing of email files. Handles directory
     creation, file discovery, and parallel or sequential processing.
@@ -749,7 +773,8 @@ def process_all_emls_in_dir(
 
     Args:
         input_dir (Path): Directory containing EML files to process.
-        output_dir (Path): Directory where PDFs will be saved (created if needed).
+        output_dir (Path): Directory where PDFs will be saved (created if
+            needed).
         number_of_procs (int): Number of parallel processes. Use 1 for
                                sequential. Defaults to 1.
         debug_html (bool): Save intermediate HTML files for debugging. Defaults
@@ -886,20 +911,18 @@ def generate_pdf(
     try:
         if debug_html and outfile_path:
             html_file = outfile_path.parent / Path(outfile_path.name + '.html')
-            of = open(html_file, 'w', encoding='utf-8')
-            of.write(html_content)
-            of.close()
+            with open(html_file, 'w', encoding='utf-8') as of:
+                of.write(html_content)
         html = HTML(string=html_content)
         css = CSS(string=f'@page {{ size: {page}; margin: 1cm }}')
 
         if outfile_path:
-            outfile = _get_exclusive_outfile(outfile_path)
-
-            html.write_pdf(
-                target=outfile,
-                presentational_hints=True,
-                stylesheets=[css],
-            )
+            with _get_exclusive_outfile(outfile_path) as outfile:
+                html.write_pdf(
+                    target=outfile,
+                    presentational_hints=True,
+                    stylesheets=[css],
+                )
             logger.info(f'{prefix}Converted to PDF successfully.')
             return None
         else:
@@ -921,11 +944,13 @@ def header_to_html(header_str: str) -> str:
         1. Uses email.header.decode_header() to parse encoded headers
         2. Handles multi-part headers by concatenating them
         3. For string parts, uses them directly
-        4. For byte parts, decodes with specified encoding (defaults to 'ascii' if None)
+        4. For byte parts, decodes with specified encoding (defaults to
+            'ascii' if None)
         5. HTML-escapes the final result to prevent XSS
 
     Args:
-        header_str (str): The raw email header string (may be RFC 2047 encoded).
+        header_str (str): The raw email header string (may be RFC 2047
+            encoded).
 
     Returns:
         str: Decoded and HTML-escaped header string safe for inclusion in HTML.
@@ -945,12 +970,8 @@ def header_to_html(header_str: str) -> str:
             headers_as_string += head[0]
         else:
             # If a header is ascii encoded then head[1] is None
-            if head[1] is None:
-                enc = 'ascii'
-            else:
-                # If head[1] is not None it should be a string with the
-                # encoding.
-                enc = head[1]
+            # If head[1] is not None it should be a string with the encoding.
+            enc = 'ascii' if head[1] is None else head[1]
             headers_as_string += str(head[0], enc)
     # eml headers can contain &, <, >
     return escape(headers_as_string)

@@ -1,8 +1,8 @@
 import argparse
 import logging
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from . import libeml2pdf
 

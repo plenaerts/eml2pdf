@@ -11,6 +11,7 @@ authors = [
     {name = "Pieter Lenaerts", email = "pieter.lenaerts@outlook.be"},
     {name = "Daniel Grossfeld", email = "github@klokie.com"},
 ]
+
 requires-python = ">= 3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -72,6 +73,36 @@ python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = [
+]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+    # mccabe
+    "C90",
 ]
 
 # Poe the Poet task configuration
@@ -166,12 +197,6 @@ sequence = [
     { cmd = "poe test" }
 ]
 
-[tool.mypy]
-python_version = "3.11"
-warn_return_any = true
-warn_unused_configs = true
-ignore_missing_imports = true
-
 [tool.poe.tasks.check-deps]
 help = "Show available newer versions for main dependencies"
 sequence = [
@@ -206,27 +231,3 @@ help = "Complete development environment setup"
 shell = """
 pip install -e ".[dev]" && echo '\nDevelopment environment ready!' && echo 'Try: poe test, poe docs, poe build'
 """
-
-[tool.ruff]
-line-length = 79
-
-[tool.ruff.format]
-quote-style = "single"
-
-[tool.ruff.lint]
-select = [
-    # pycodestyle
-    "E",
-    # Pyflakes
-    "F",
-    # pyupgrade
-    "UP",
-    # flake8-bugbear
-    "B",
-    # flake8-simplify
-    "SIM",
-    # isort
-    "I",
-    # mccabe
-    "C90",
-]
