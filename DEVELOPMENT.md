@@ -65,9 +65,16 @@ Coverage reports are generated in:
 # Auto-fix all lint issues (Python and Markdown)
 poe lint-fix
 
-# Run all checks: lint, format, and tests
+# Run all checks: lint, format, mypy, and tests
 poe check
 ```
+
+The `check` task runs:
+- `ruff check` - Linting checks
+- `ruff format --check` - Formatting verification
+- `pymarkdownlnt scan` - Markdown linting
+- `mypy` - Static type checking
+- `pytest` - Unit tests
 
 ### Building Documentation
 

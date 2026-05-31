@@ -45,6 +45,7 @@ dev = [
     "twine>=4.0.0",  # For uploading to PyPI
     "ruff",
     "pymarkdownlnt",
+    "mypy",
 ]
 # Install with: pip install -e ".[docs]"
 docs = [
@@ -156,13 +157,20 @@ sequence = [
 ]
 
 [tool.poe.tasks.check]
-help = "Run all checks: lint, format, and tests"
+help = "Run all checks: lint, format, mypy, and tests"
 sequence = [
     { cmd = "ruff check ." },
     { cmd = "ruff format --check ." },
     { cmd = "pymarkdownlnt scan **/*.md" },
+    { cmd = "mypy ." },
     { cmd = "poe test" }
 ]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
 
 [tool.poe.tasks.check-deps]
 help = "Show available newer versions for main dependencies"

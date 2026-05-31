@@ -586,7 +586,7 @@ def _get_cte(message: email.message.Message) -> str:
 
 def _generate_html(
     msg: email.message.Message, logging_id: str | None = None
-) -> str:
+) -> tuple[_Header, str]:
     """Generates HTML for a given message.
 
     Args:
