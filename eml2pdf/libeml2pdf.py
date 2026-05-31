@@ -19,7 +19,7 @@ from typing import overload
 
 from hurry.filesize import size  # type: ignore
 from markdown import markdown
-from weasyprint import CSS, HTML  # type: ignore
+from weasyprint import CSS, HTML
 
 from . import security
 

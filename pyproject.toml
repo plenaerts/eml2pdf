@@ -18,7 +18,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "weasyprint~=64.0",
+    "weasyprint>=64.0",
     "markdown~=3.7",
     "hurry.filesize~=0.9",
     "beautifulsoup4~=4.13"
@@ -80,6 +80,7 @@ python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
+mypy_path = "stubs"
 
 [tool.ruff]
 line-length = 79
