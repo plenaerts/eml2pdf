@@ -21,6 +21,8 @@ Pango dependency is a challenge on Windows at the moment.
 - Generates a header section with email metadata From, To, Subject, Date.
 - Generates a list of attachments with size and md5sum. (Attachments are not
   embedded in the PDF.)
+- Works from command line via the eml2pdf script, but can work on files or
+  bytestreams through the API.
 
 ## Dependencies
 
@@ -56,7 +58,7 @@ Github](https://github.com/plenaerts/eml2pdf/blob/main/INSTALL.md) or
 {ref}`install` for more detailed installation instructions if you need more
 help.
 
-## Usage
+## Command line usage
 
 eml2pdf has two modes of operation controlled via subcommands `convert_dir` and
 `convert_file`. Both modes share options to control page size, perform HTML
@@ -74,7 +76,8 @@ options:
 supported subcommands::
   {convert_dir,convert_file}
                         Use {subcommand} --help for options.
-    convert_dir         Convert all EML files in an input dir to PDF files in an output dir.
+    convert_dir         Convert all EML files in an input dir to PDF files in
+                        an output dir.
     convert_file        Convert a single EML file to a single PDF
 ```
 
@@ -102,7 +105,8 @@ subprocesses gets mixed.
 
 ```text
 $ eml2pdf convert_dir -h
-usage: eml2pdf convert_dir [-h] [-p size] [--unsafe] [-d] [-v] [-q] [-n number] input_dir output_dir
+usage: eml2pdf convert_dir [-h] [-p size] [--unsafe] [-d] [-v] [-q]
+                           [-n number] input_dir output_dir
 
 positional arguments:
   input_dir             Directory containing EML files
@@ -110,19 +114,25 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  -p, --page size       One of a3, a4, a5, b4, b5, letter, legal, or ledger, with or without "landscape", for example: "a4 landscape" or a3. Surround with quotes if there is a space in the argument value.
-                        Defaults to "a4", implying portrait.
-  --unsafe              Don't sanitize HTML from potentially unsafe elements such as remote images, scripts, etc. This may expose sensitive user information.
+  -p, --page size       One of a3, a4, a5, b4, b5, letter, legal, or ledger,
+                        with or without "landscape", for example:
+                        "a4 landscape" or a3. Surround with quotes if there is
+                        a space in the argument value. Defaults to "a4",
+                        implying portrait.
+  --unsafe              Don't sanitize HTML from potentially unsafe elements
+                        such as remote images, scripts, etc. This may expose
+                        sensitive user information.
   -d, --debug_html      Write intermediate html file next to PDF's
-  -v, --verbose         Show a lot of verbose debugging info. Forces number of procs to 1.
+  -v, --verbose         Show a lot of verbose debugging info. Forces number of
+                        procs to 1.
   -q, --quiet           Show only errors.
   -n, --number-of-procs number
                         Number of parallel processes. Defaults to the number of
                         available logical CPU's to eml_to_pdf.
 ```
 
-Example below renders all .eml files in `./emails` to a4 landscape oriented pdf's
-in `./pdf`:
+Example below renders all .eml files in `./emails` to a4 landscape oriented
+pdf's in `./pdf`:
 
 ```bash
 eml2pdf -p "a4 landscape" ./emails ./pdfs
@@ -130,11 +140,13 @@ eml2pdf -p "a4 landscape" ./emails ./pdfs
 
 ### convert_file
 
-convert_file works per file, taking the input filename of the EML to convert to PDF and output filename to convert to.
+convert_file works per file, taking the input filename of the EML to convert
+to PDF and output filename to convert to.
 
 ```text
 $ eml2pdf convert_file -h
-usage: eml2pdf convert_file [-h] [-p size] [--unsafe] [-d] [-v] [-q] input_file output_file
+usage: eml2pdf convert_file [-h] [-p size] [--unsafe] [-d] [-v] [-q]
+                            input_file output_file
 
 positional arguments:
   input_file        Input EML file to convert
@@ -142,11 +154,16 @@ positional arguments:
 
 options:
   -h, --help        show this help message and exit
-  -p, --page size   One of a3, a4, a5, b4, b5, letter, legal, or ledger, with or without "landscape", for example: "a4 landscape" or a3. Surround with quotes if there is a space in the argument value. Defaults
-                    to "a4", implying portrait.
-  --unsafe          Don't sanitize HTML from potentially unsafe elements such as remote images, scripts, etc. This may expose sensitive user information.
+  -p, --page size   One of a3, a4, a5, b4, b5, letter, legal, or ledger, with
+                    or without "landscape", for example: "a4 landscape" or a3.
+                    Surround with quotes if there is a space in the argument
+                    value. Defaults to "a4", implying portrait.
+  --unsafe          Don't sanitize HTML from potentially unsafe elements such
+                    as remote images, scripts, etc. This may expose sensitive
+                    user information.
   -d, --debug_html  Write intermediate html file next to PDF's
-  -v, --verbose     Show a lot of verbose debugging info. Forces number of procs to 1.
+  -v, --verbose     Show a lot of verbose debugging info. Forces number of
+                    procs to 1.
   -q, --quiet       Show only errors.
 
 ```
@@ -202,10 +219,27 @@ your convenience. They give a very strong indication that files are not
 altered. **They will not be usable as proof in courts of law.**
 They are not intended to be.
 
+## API usage
+
+The API is documented in the code and html docs are available by building the
+docs. (See below for development info.)
+
+Simple API example:
+
+```python
+>>> from eml2pdf import process_eml_bytes
+>>> with open('tests/test_data/plain_lorem_ipsum.eml', 'rb') as infile:
+...     with open('/tmp/out.pdf', 'wb') as outfile:
+...         outfile.write(process_eml_bytes(infile.read()))
+...         
+8960
+```
+
 ## Reporting issues
 
 We've tested eml2pdf with a couple of cases with embedded images, tables,
-unicode or specific encodings. Refer to [tests](https://github.com/plenaerts/eml2pdf/tree/main/tests) for example
+unicode or specific encodings. Refer to
+[tests](https://github.com/plenaerts/eml2pdf/tree/main/tests) for example
 emails.
 
 Please open an issue ticket if you have a mail where conversion results are
@@ -214,8 +248,8 @@ expect. Attach verbose eml2pdf output of only this eml file and attach
 the eml file itself. We're not promising a solution, but we can
 have a look.
 
-**Please cleanup any attachments you add. Remove things you don't want to share with
-the world.**
+**Please cleanup any attachments you add. Remove things you don't want to
+share with the world.**
 
 ## Credits
 
@@ -228,7 +262,8 @@ https://github.com/klokie/).
 - Inline non-image attachments - [omusale](https://github.com/omusale)
 - convert_file mode and 8bit CTE with UTF-8 encoding -
   [bastidest](https://github.com/bastidest).
-- Fix bug - Header class not renamed correctly [benhxy](https://github.com/benhxy)
+- Fix bug - Header class not renamed correctly
+  [benhxy](https://github.com/benhxy)
 
 If you want to work on eml2pdf, read [DEVELOPMENT.md on
 GitHub](https://github.com/plenaerts/eml2pdf/blob/main/DEVELOPMENT.md) or
