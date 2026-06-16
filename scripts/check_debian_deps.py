@@ -2,8 +2,8 @@
 """Check if dependencies are at versions supported by Debian stable."""
 
 import argparse
-import subprocess
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -11,25 +11,33 @@ from pathlib import Path
 def check_rmadison():
     """Check if rmadison is available, install hint if on Debian."""
     try:
-        subprocess.run(['rmadison', '--version'], capture_output=True, check=True)
+        subprocess.run(
+            ['rmadison', '--version'], capture_output=True, check=True
+        )
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         pass
-    
+
     # Check if we're on a Debian-based system
     try:
         with open('/etc/os-release') as f:
             content = f.read()
             if 'debian' in content.lower() or 'ubuntu' in content.lower():
                 print("Error: 'rmadison' not found.", file=sys.stderr)
-                print("Install it on Debian/Ubuntu with:", file=sys.stderr)
-                print("  sudo apt install devscripts", file=sys.stderr)
+                print('Install it on Debian/Ubuntu with:', file=sys.stderr)
+                print('  sudo apt install devscripts', file=sys.stderr)
                 sys.exit(1)
     except FileNotFoundError:
         pass
-    
-    print("Error: 'rmadison' not found and could not detect Debian system.", file=sys.stderr)
-    print("Install devscripts package or ensure rmadison is in PATH.", file=sys.stderr)
+
+    print(
+        "Error: 'rmadison' not found and could not detect Debian system.",
+        file=sys.stderr,
+    )
+    print(
+        'Install devscripts package or ensure rmadison is in PATH.',
+        file=sys.stderr,
+    )
     sys.exit(1)
 
 
@@ -41,7 +49,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     '--suite',
     default='stable',
-    help='Debian suite to check against (default: stable)'
+    help='Debian suite to check against (default: stable)',
 )
 args = parser.parse_args()
 
@@ -72,7 +80,7 @@ def get_debian_version(package, suite):
             ['rmadison', '-s', suite, package],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         )
         # Parse the first line: package | version | suite
         lines = result.stdout.strip().split('\n')
@@ -101,27 +109,37 @@ def read_pinned_version(package):
 
 def check_dependencies(deps_map, label, suite):
     """Check and display dependency versions."""
-    print(f"\n{label}:")
-    print("-" * 60)
+    print(f'\n{label}:')
+    print('-' * 60)
 
     for pypi_name, debian_name in deps_map.items():
         pinned = read_pinned_version(pypi_name)
         debian_ver = get_debian_version(debian_name, suite)
 
-        status = "✓" if pinned and debian_ver and pinned.startswith(debian_ver.rsplit('.')[0]) else "✗"
+        ver_match = debian_ver.rsplit('.')[0] if debian_ver else None
+        status = (
+            '✓'
+            if pinned and debian_ver and pinned.startswith(ver_match)
+            else '✗'
+        )
 
-        print(f"  {status} {pypi_name:20} ({debian_name:25}) pinned: {pinned or 'N/A':<12} debian: {debian_ver or 'N/A'}")
+        print(
+            f'  {status} {pypi_name:20} ({debian_name:25}) '
+            f'pinned: {pinned or "N/A":<12} debian: {debian_ver or "N/A"}'
+        )
 
 
 def main():
-    print(f"Checking {args.suite} versions for dependencies")
-    print("=" * 60)
+    print(f'Checking {args.suite} versions for dependencies')
+    print('=' * 60)
 
-    check_dependencies(PYPI_TO_DEBIAN, "Main dependencies", args.suite)
-    check_dependencies(DEV_DEPS, "Development dependencies", args.suite)
+    check_dependencies(PYPI_TO_DEBIAN, 'Main dependencies', args.suite)
+    check_dependencies(DEV_DEPS, 'Development dependencies', args.suite)
 
-    print(f"\nNote: ✓ = pinned version matches Debian {args.suite} major version")
-    print("      ✗ = mismatch or package not found")
+    print(
+        f'\nNote: ✓ = pinned version matches Debian {args.suite} major version'
+    )
+    print('      ✗ = mismatch or package not found')
 
 
 if __name__ == '__main__':

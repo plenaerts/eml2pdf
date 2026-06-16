@@ -1,6 +1,7 @@
 """Unit tests for HTML sanitization security functions."""
 
 import unittest
+
 from eml2pdf.security import sanitize_html
 
 
@@ -87,13 +88,17 @@ class TestSanitizeHtml(unittest.TestCase):
 
     def test_preserves_data_uri_images(self):
         """Images with data: URIs should be preserved."""
-        html = '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==">'
+        html = (
+            '<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAA'
+            'AABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5Erk'
+            'Jggg==">'
+        )
         result = sanitize_html(html)
         self.assertIn('data:image', result)
         self.assertIn('<img', result)
 
     def test_preserves_cid_images(self):
-        """Images with cid: references should be preserved (email attachments)."""
+        """Images with cid: references should be preserved (attachments)."""
         html = '<img src="cid:image001.jpg@01DA1234">'
         result = sanitize_html(html)
         self.assertIn('cid:', result)
@@ -101,7 +106,10 @@ class TestSanitizeHtml(unittest.TestCase):
 
     def test_sanitizes_style_with_url(self):
         """Style attributes containing url() should be cleared."""
-        html = '<div style="background: url(http://tracker.com/bg.png)">Content</div>'
+        html = (
+            '<div style="background: url(http://tracker.com/bg.png)">'
+            'Content</div>'
+        )
         result = sanitize_html(html)
         self.assertNotIn('tracker.com', result)
         self.assertIn('style=""', result)
@@ -211,7 +219,8 @@ class TestSanitizeHtml(unittest.TestCase):
         <html>
             <body>
                 <h1>Title</h1>
-                <p>Paragraph with <strong>bold</strong> and <em>italic</em>.</p>
+                <p>Paragraph with <strong>bold</strong> and <em>italic</em>.
+                </p>
                 <ul>
                     <li>Item 1</li>
                     <li>Item 2</li>

@@ -1,10 +1,10 @@
 """Unit tests for public functions in libeml2pdf module."""
 
 import logging
-import unittest
-import tempfile
-from pathlib import Path
 import shutil
+import tempfile
+import unittest
+from pathlib import Path
 
 from eml2pdf import libeml2pdf
 

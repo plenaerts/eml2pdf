@@ -1,13 +1,15 @@
-import unittest
-from pathlib import Path
 import email
-from html import escape
-from eml2pdf import libeml2pdf
-from .common import Eml, mails as base_mails
-import os
 import hashlib
+import os
 import sys
+import unittest
+from html import escape
+from pathlib import Path
 
+from eml2pdf import libeml2pdf
+
+from .common import Eml
+from .common import mails as base_mails
 
 eml_path = Path('tests/test_data')
 

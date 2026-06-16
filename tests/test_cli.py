@@ -1,9 +1,10 @@
 """Unit tests for CLI argument parsing and main function."""
 
-import unittest
-from unittest.mock import patch
-from pathlib import Path
 import logging
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
 from eml2pdf.eml2pdf import get_args, main
 
 
@@ -189,7 +190,7 @@ class TestGetArgs(unittest.TestCase):
             self.assertFalse(args.quiet)
 
     def test_convert_file_basic_arguments(self):
-        """Test parsing of required input_file and output_file arguments for convert_file."""
+        """Test parsing of input_file and output_file for convert_file."""
         with patch(
             'sys.argv', ['eml2pdf', 'convert_file', 'input.eml', 'output.pdf']
         ):
@@ -438,12 +439,21 @@ class TestLogLevelPropagation(unittest.TestCase):
         import eml2pdf.libeml2pdf as lib
 
         orig_level = lib.logger.level
-        with patch(
-            'sys.argv',
-            ['eml2pdf', 'convert_file', 'input.eml', 'output.pdf', '-v', '-q'],
+        with (
+            patch(
+                'sys.argv',
+                [
+                    'eml2pdf',
+                    'convert_file',
+                    'input.eml',
+                    'output.pdf',
+                    '-v',
+                    '-q',
+                ],
+            ),
+            patch('logging.warning') as mock_warning,
         ):
-            with patch('logging.warning') as mock_warning:
-                main()
-                mock_warning.assert_called_once()
-                self.assertEqual(lib.logger.level, logging.DEBUG)
+            main()
+            mock_warning.assert_called_once()
+            self.assertEqual(lib.logger.level, logging.DEBUG)
         lib.logger.setLevel(orig_level)

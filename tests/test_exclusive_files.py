@@ -1,9 +1,10 @@
 """Unittests for unique, exclusive file name functions."""
 
 import unittest
+from os import mkdir
 from pathlib import Path
 from shutil import rmtree
-from os import mkdir
+
 from eml2pdf import libeml2pdf
 
 test_dir = Path('tmp_test')
@@ -14,7 +15,8 @@ class ExclusiveFileTestCase(unittest.TestCase):
         """Create 3 test files in test_dir"""
         basename = 'testfile'
         mkdir(test_dir)
-        f = open(test_dir / Path(f'{basename}.pdf'), 'x')
+        # We really want to manually open this file. Skip SIM115
+        f = open(test_dir / Path(f'{basename}.pdf'), 'x')  # noqa: SIM115
         f.close()
         for i in range(1, 3):
             # Remember range(1,3) does not contain 3 ;-)

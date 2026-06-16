@@ -574,7 +574,12 @@ def _get_filepaths(input_dir: Path) -> list[Path]:
     eml_pat = '*.eml'
     if sys.version_info.minor >= 12:
         # Nice new syntax. Unpack the Generator returned by glob() in a list.
-        filepaths = list(input_dir.glob(eml_pat, case_sensitive=None))
+        # Mypy won't know this syntax. Ignore it for that line.
+        filepaths = list(
+            input_dir.glob(  # type: ignore
+                eml_pat, case_sensitive=None
+            )
+        )
     else:
         # Ugly old syntax
         filepaths = [

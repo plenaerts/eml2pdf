@@ -17,7 +17,9 @@
 
 ## v2.0 - 2026-04-09
 
-- **Breaking changes to the CLI and API**
+<!-- pyml disable-next-line no-emphasis-as-heading-->
+**Breaking changes to the CLI and API**
+
 - `eml2pdf` command line script now supports:
   1) converting all eml files in a directory to pdf using subcommand
   `convert_dir` and

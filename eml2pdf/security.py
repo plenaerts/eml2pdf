@@ -3,10 +3,12 @@
 from bs4 import BeautifulSoup
 
 
-def sanitize_html(html_content):
+# This function is not that complex so no C901
+def sanitize_html(html_content):  # noqa C901
     """Remove potential privacy and security issues from HTML content.
 
-    Sanitizes HTML by removing or neutralizing dangerous elements and attributes
+    Sanitizes HTML by removing or neutralizing dangerous elements
+    and attributes
     before PDF generation. This provides defense-in-depth protection against
     various attack vectors.
 
@@ -14,13 +16,15 @@ def sanitize_html(html_content):
         - Script execution (script, iframe, object, embed tags)
         - Data exfiltration via forms
         - Privacy leaks via remote resources (tracking pixels, web beacons)
-        - Cross-Site Scripting via event handlers (onclick, onload, onerror, etc.)
+        - Cross-Site Scripting via event handlers
+          (onclick, onload, onerror, etc.)
         - Remote resource loading (meta redirects, external stylesheets)
         - CSS-based tracking via url() references
         - External link navigation
 
     Processing Steps:
-        1. Removes risky HTML tags (script, iframe, object, embed, video, audio,
+        1. Removes risky HTML tags (script, iframe, object, embed,
+           video, audio,
            form, meta, link)
         2. Removes remote images (http:// or https:// sources)
         3. Clears style attributes containing url() references
@@ -38,7 +42,10 @@ def sanitize_html(html_content):
         Remote images are completely removed to prevent tracking.
 
     Example:
-        >>> html = '<img src="http://tracker.com/pixel.gif"><script>alert(1)</script>'
+        >>> html = (
+            '<img src="http://tracker.com/pixel.gif">'
+            '<script>alert(1)</script>'
+        )
         >>> sanitize_html(html)
         ''
     """

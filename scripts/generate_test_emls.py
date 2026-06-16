@@ -7,11 +7,12 @@ from pathlib import Path
 # Add tests directory to path to import common
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from email.header import Header
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from email.utils import formatdate
-from tests.common import Eml, mails
+
+from tests.common import mails
 
 
 def main():

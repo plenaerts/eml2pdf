@@ -70,6 +70,7 @@ poe check
 ```
 
 The `check` task runs:
+
 - `ruff check` - Linting checks
 - `ruff format --check` - Formatting verification
 - `pymarkdownlnt scan` - Markdown linting
@@ -192,7 +193,8 @@ Markdown files are supported via `myst_parser`. Include them in RST files:
 
 The `scripts/` directory contains helper scripts:
 
-- `check_debian_deps.py` - Check if dependencies match Debian stable versions (`poe check-debian-deps`)
+- `check_debian_deps.py` - Check if dependencies match Debian stable
+  versions (`poe check-debian-deps`)
 - `generate_test_emls.py` - Generate test EML files (`poe generate-test-emls`)
 
 ## Version Management
