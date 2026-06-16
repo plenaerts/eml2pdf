@@ -185,7 +185,7 @@ help = "Auto-fix all lint issues (Python and Markdown)"
 sequence = [
     { cmd = "ruff check --fix ." },
     { cmd = "ruff format ." },
-    { cmd = "pymarkdownlnt fix **/*.md" },
+    { cmd = "pymarkdownlnt fix CHANGELOG.md DEVELOPMENT.md INSTALL.md README.md SECURITY.md docs/*.md" },
 ]
 
 [tool.poe.tasks.check]
@@ -193,7 +193,7 @@ help = "Run all checks: lint, format, mypy, and tests"
 sequence = [
     { cmd = "ruff check ." },
     { cmd = "ruff format --check ." },
-    { cmd = "pymarkdownlnt scan **/*.md" },
+    { cmd = "pymarkdownlnt scan CHANGELOG.md DEVELOPMENT.md INSTALL.md README.md SECURITY.md docs/*.md" },
     { cmd = "mypy ." },
     { cmd = "poe test" }
 ]
