@@ -264,7 +264,7 @@ def _decode_to_str(
         except (UnicodeDecodeError, LookupError):
             # Fallback for binary data/mismatched charsets
             logger.warning(
-                f"Strict decode failed for {content_charset}. Using "
+                f'Strict decode failed for {content_charset}. Using '
                 "'replace' mode."
             )
             decoded = bytes_content.decode(content_charset, errors='replace')
@@ -281,6 +281,66 @@ def _decode_to_str(
             logger.debug(f'Unicode escape decoding skipped: {e}')
 
     return decoded
+
+
+def _is_text_content(
+    content_type: str, content_disposition: str | None
+) -> bool:
+    """Check if part is text content that should be rendered.
+
+    Args:
+        content_type: The MIME content type (e.g., 'text/plain', 'text/html')
+        content_disposition: The content disposition (None, 'inline', etc.)
+
+    Returns:
+        True if the part is text content that should be included in the output.
+    """
+    text_types = {'text/plain', 'text/html'}
+    valid_dispositions = (None, 'inline')
+    return (
+        content_type in text_types
+        and content_disposition in valid_dispositions
+    )
+
+
+def _should_save_as_attachment(
+    content_disposition: str | None, is_image: bool
+) -> bool:
+    """Determine if a part should be saved as an attachment.
+
+    Args:
+        content_disposition: The content disposition
+            ('attachment', 'inline', etc.)
+        is_image: Whether the content type starts with 'image/'
+
+    Returns:
+        True if the part should be saved to the attachments list.
+    """
+    return content_disposition == 'attachment' or (
+        content_disposition == 'inline' and not is_image
+    )
+
+
+def _create_attachment(
+    filename: str | None, payload: bytes
+) -> _Attachment | None:
+    """Create an _Attachment object from filename and payload.
+
+    Args:
+        filename: The original filename (will be HTML-escaped)
+        payload: The binary content of the attachment
+
+    Returns:
+        _Attachment object with name, size, and MD5 hash,
+            or None if no filename.
+    """
+    if not filename:
+        return None
+    filename = header_to_html(filename)
+    filesize = sys.getsizeof(payload)
+    _hash = hashlib.md5()
+    _hash.update(payload)
+    return _Attachment(name=filename, size=filesize, md5sum=_hash.hexdigest())
 
 
 def _walk_eml(
@@ -347,71 +407,44 @@ def _walk_eml(
     for part in msg.walk():
         content_disposition = part.get_content_disposition()
         content_type = part.get_content_type()
-        content_charset = part.get_content_charset() or 'utf-8'
         payload = part.get_payload(decode=True)
 
-        # Go to the next part if we don't have a payload.
-        if not payload:
+        # Skip invalid parts
+        if not isinstance(payload, bytes) or not payload:
             continue
 
-        # Ensure payload is bytes (safety check)
-        if not isinstance(payload, bytes):
-            continue
-
-        # We allow 'inline' here to capture text bodies marked as inline
-        if (content_type == 'text/plain' or content_type == 'text/html') and (
-            content_disposition is None or content_disposition == 'inline'
-        ):
+        # Handle text content
+        if _is_text_content(content_type, content_disposition):
             decoded_payload = _decode_to_str(
                 payload,
-                content_charset,
+                part.get_content_charset() or 'utf-8',
                 content_transfer_encoding=_get_cte(part),
             )
-
             if content_type == 'text/plain':
                 plain_text_content += decoded_payload
-            elif content_type == 'text/html':
+            else:
                 html_content += decoded_payload
+            continue
 
-        # Handle Attachments AND Inline Files
-        elif (
-            content_disposition == 'attachment'
-            or content_disposition == 'inline'
-        ):
+        # Handle attachments and inline files
+        if content_disposition in {'attachment', 'inline'}:
             filename = part.get_filename()
             is_image = content_type.startswith('image/')
 
-            # Save as attachment if it is:
-            # 1. Marked 'attachment' OR
-            # 2. Marked 'inline' BUT is not an image (like your .doc file)
-            should_save_as_attachment = (
-                content_disposition == 'attachment'
-                or (content_disposition == 'inline' and not is_image)
-            )
+            # Save as attachment if appropriate
+            if _should_save_as_attachment(content_disposition, is_image) and (
+                attachment := _create_attachment(filename, payload)
+            ):
+                attachments.append(attachment)
 
-            if should_save_as_attachment and filename:
-                filename = header_to_html(filename)
-                filesize = sys.getsizeof(payload)
-                _hash = hashlib.md5()
-                _hash.update(payload)
-                attachments.append(
-                    _Attachment(
-                        name=filename, size=filesize, md5sum=_hash.hexdigest()
-                    )
-                )
-
-            # Handle Inline Images (rendering)
-            if is_image:
-                cid = part.get('Content-ID')
-
-                # Store attachments by CID or filename
-                if cid:
-                    cid = cid.strip('<>')
-                    cid_attachments[cid] = {
-                        'filename': filename,
-                        'content': payload,
-                        'content_type': content_type,
-                    }
+            # Handle inline images for rendering
+            if is_image and (cid := part.get('Content-ID')):
+                cid = cid.strip('<>')
+                cid_attachments[cid] = {
+                    'filename': filename,
+                    'content': payload,
+                    'content_type': content_type,
+                }
 
     html_content = (
         _embed_imgs(html_content, cid_attachments)
@@ -501,10 +534,10 @@ def _get_exclusive_outfile(outfile_path: Path) -> BufferedWriter:
         <_io.BufferedWriter name='report_1.pdf'>
     """
     try:
-        outfile = open(outfile_path, 'xb') # noqa: SIM115
+        outfile = open(outfile_path, 'xb')  # noqa: SIM115
     except OSError as e:
         logger.debug(f'Could not open {outfile_path} exclusively. {e}')
-        outfile = open(os.devnull, 'wb') # noqa: SIM115
+        outfile = open(os.devnull, 'wb')  # noqa: SIM115
         outfile.close()  # We won't use devnull.
 
     counter = 1
@@ -513,7 +546,7 @@ def _get_exclusive_outfile(outfile_path: Path) -> BufferedWriter:
             f'{outfile_path.stem}_{counter}{outfile_path.suffix}'
         )
         try:
-            outfile = open(new_outfile_path, 'xb') # noqa: SIM115
+            outfile = open(new_outfile_path, 'xb')  # noqa: SIM115
         except OSError as e:
             logger.debug(f'Could not open {outfile_path} exclusively. {e}')
             counter += 1
