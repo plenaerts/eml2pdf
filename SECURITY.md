@@ -95,18 +95,22 @@ eml2pdf convert_file input_file output_file
 #### Via API
 
 ```python
-from eml2pdf import libeml2pdf
+from eml2pdf import process_eml, process_all_emls_in_dir, process_eml_bytes
 
 # Sanitization is enabled by default (unsafe=False)
-libeml2pdf.process_eml(eml_path, output_path)
+process_eml(eml_path, output_path)
 
 # Or for a whole dir
-libeml2pdf.process_all_emls_in_dir(input_dir, output_dir)
+process_all_emls_in_dir(input_dir, output_dir)
+
+# Or for bytes in memory
+pdf_bytes = process_eml_bytes(eml_bytes)
 ```
 
 ### Unsafe Mode
 
-The `--unsafe` flag disables HTML sanitization. This mode should only be used when:
+The `--unsafe` flag (or `unsafe=True` parameter in the API) disables HTML
+sanitization. This mode should only be used when:
 
 - You completely trust the source of the EML files
 - You understand the security risks involved
@@ -115,8 +119,25 @@ The `--unsafe` flag disables HTML sanitization. This mode should only be used wh
 tracking pixels, external resources, and other privacy-invasive techniques.
 Consider running eml2pdf airgapped if you have reason to.
 
+#### Via command line (Unsafe Mode)
+
 ```bash
 eml2pdf convert_file input_file output_file --unsafe
+```
+
+#### Via API (Unsafe Mode)
+
+```python
+from eml2pdf import process_eml, process_all_emls_in_dir, process_eml_bytes
+
+# Disable sanitization for a single file
+process_eml(eml_path, output_path, unsafe=True)
+
+# Disable sanitization for a directory
+process_all_emls_in_dir(input_dir, output_dir, unsafe=True)
+
+# Disable sanitization for bytes
+pdf_bytes = process_eml_bytes(eml_bytes, unsafe=True)
 ```
 
 ## Some technical details
@@ -133,9 +154,14 @@ eml2pdf convert_file input_file output_file --unsafe
 The sanitization occurs in the `generate_pdf()` function in eml2pdf/libeml2pdf.py:
 
 ```python
-def generate_pdf(html_content: str, outfile_path: Path, infile: Path,
-                 debug_html: bool = False, page: str = 'a4',
-                 unsafe: bool = False):
+def generate_pdf(
+    html_content: str,
+    outfile_path: Path | None = None,
+    debug_html: bool = False,
+    page: str = 'a4',
+    unsafe: bool = False,
+    logging_id: str | None = None,
+) -> bytes | None:
     """Convert HTML to PDF."""
 
     # ... Some logging config first ...
@@ -147,7 +173,9 @@ def generate_pdf(html_content: str, outfile_path: Path, infile: Path,
 ```
 
 This ensures that all HTML content is sanitized immediately before PDF
-rendering, regardless of the source.
+rendering, regardless of the source. The `unsafe` parameter is passed through
+from the API functions (`process_eml`, `process_all_emls_in_dir`,
+`process_eml_bytes`) and the CLI `--unsafe` flag.
 
 ## Limitations
 
