@@ -77,6 +77,9 @@ The `check` task runs:
 - `mypy` - Static type checking
 - `pytest` - Unit tests
 
+Refer to pyproject.toml tool.ruff sections for project style rules. Basically
+they are the ruff defaults except 79 chars max linelength and single quotes.
+
 ### Building Documentation
 
 ```bash
