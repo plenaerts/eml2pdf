@@ -1,0 +1,345 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Development Guide &mdash; eml2pdf  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Reference" href="api.html" />
+    <link rel="prev" title="Security Features" href="security.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            eml2pdf
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">Overview, usage, installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation instructions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="security.html">Security Features</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Development Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#initial-setup">Initial Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#available-commands">Available Commands</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#common-workflows">Common Workflows</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#running-tests">Running Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#linting-and-formatting">Linting and Formatting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#building-documentation">Building Documentation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#building-distribution-packages">Building Distribution Packages</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#publishing-to-pypi">Publishing to PyPI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#cleaning">Cleaning</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#project-configuration">Project Configuration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#dependencies">Dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#poe-the-poet-tasks">Poe the Poet Tasks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pytest-configuration">Pytest Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sphinx-configuration">Sphinx Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#writing-documentation">Writing Documentation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#docstrings">Docstrings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rst-files">RST Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#markdown-files">Markdown Files</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#scripts">Scripts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#version-management">Version Management</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="documentation.html">Documentation Setup</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">eml2pdf</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Development Guide</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/development.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="development-guide">
+<span id="development"></span><h1>Development Guide<a class="headerlink" href="#development-guide" title="Link to this heading"></a></h1>
+<p>This guide explains how to set up the development environment and use the
+project tools.</p>
+<p>All tasks are defined in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> using <a class="reference external" href="https://poethepoet.natn.io/">Poe the
+Poet</a>.</p>
+<section id="initial-setup">
+<h2>Initial Setup<a class="headerlink" href="#initial-setup" title="Link to this heading"></a></h2>
+<ol class="arabic">
+<li><p>Clone and navigate to the project:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>/path/to/eml2pdf
+</pre></div>
+</div>
+</li>
+<li><p>Install in development mode with all dependencies:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev]&quot;</span>
+</pre></div>
+</div>
+<p>This installs the package in editable mode with pytest, coverage, Sphinx,
+and poe.</p>
+<p>Or use the automated setup:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poe<span class="w"> </span>dev-setup
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="available-commands">
+<h2>Available Commands<a class="headerlink" href="#available-commands" title="Link to this heading"></a></h2>
+<p>Run <code class="docutils literal notranslate"><span class="pre">poe</span></code> to see all available tasks:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poe
+</pre></div>
+</div>
+<p>All tasks are defined in the <code class="docutils literal notranslate"><span class="pre">[tool.poe.tasks]</span></code> section of <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>.</p>
+</section>
+<section id="common-workflows">
+<h2>Common Workflows<a class="headerlink" href="#common-workflows" title="Link to this heading"></a></h2>
+<section id="running-tests">
+<h3>Running Tests<a class="headerlink" href="#running-tests" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run all tests</span>
+poe<span class="w"> </span><span class="nb">test</span>
+
+<span class="c1"># Run tests with verbose output</span>
+poe<span class="w"> </span>test-verbose
+
+<span class="c1"># Run tests with coverage report</span>
+poe<span class="w"> </span>coverage
+</pre></div>
+</div>
+<p>Coverage reports are generated in:</p>
+<ul class="simple">
+<li><p>Terminal: Shows missing lines</p></li>
+<li><p>HTML: <code class="docutils literal notranslate"><span class="pre">htmlcov/index.html</span></code></p></li>
+</ul>
+</section>
+<section id="linting-and-formatting">
+<h3>Linting and Formatting<a class="headerlink" href="#linting-and-formatting" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Auto-fix all lint issues (Python and Markdown)</span>
+poe<span class="w"> </span>lint-fix
+
+<span class="c1"># Run all checks: lint, format, mypy, and tests</span>
+poe<span class="w"> </span>check
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">check</span></code> task runs:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ruff</span> <span class="pre">check</span></code> - Linting checks</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ruff</span> <span class="pre">format</span> <span class="pre">--check</span></code> - Formatting verification</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pymarkdownlnt</span> <span class="pre">scan</span></code> - Markdown linting</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mypy</span></code> - Static type checking</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pytest</span></code> - Unit tests</p></li>
+</ul>
+<p>Refer to pyproject.toml tool.ruff sections for project style rules. Basically
+they are the ruff defaults except 79 chars max linelength and single quotes.</p>
+</section>
+<section id="building-documentation">
+<h3>Building Documentation<a class="headerlink" href="#building-documentation" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build HTML documentation</span>
+poe<span class="w"> </span>docs
+
+<span class="c1"># Build and serve documentation locally</span>
+poe<span class="w"> </span>docs-serve
+</pre></div>
+</div>
+<p>Documentation is generated from:</p>
+<ul class="simple">
+<li><p>Google-style docstrings in source code (<code class="docutils literal notranslate"><span class="pre">eml2pdf/*.py</span></code>)</p></li>
+<li><p>RST files in <code class="docutils literal notranslate"><span class="pre">docs/</span></code> directory</p></li>
+<li><p>Markdown files (via <code class="docutils literal notranslate"><span class="pre">myst_parser</span></code>)</p></li>
+</ul>
+<p>View the built docs at <code class="docutils literal notranslate"><span class="pre">docs/_build/html/index.html</span></code></p>
+</section>
+<section id="building-distribution-packages">
+<h3>Building Distribution Packages<a class="headerlink" href="#building-distribution-packages" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Build source distribution and wheel</span>
+poe<span class="w"> </span>build
+</pre></div>
+</div>
+<p>Output goes to <code class="docutils literal notranslate"><span class="pre">dist/</span></code> directory:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">eml2pdf-X.Y.Z.tar.gz</span></code> - Source distribution</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eml2pdf-X.Y.Z-py3-none-any.whl</span></code> - Wheel</p></li>
+</ul>
+</section>
+<section id="publishing-to-pypi">
+<h3>Publishing to PyPI<a class="headerlink" href="#publishing-to-pypi" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Test on TestPyPI first</span>
+poe<span class="w"> </span>upload-test
+
+<span class="c1"># Upload to real PyPI</span>
+poe<span class="w"> </span>upload
+</pre></div>
+</div>
+<p><strong>Note</strong>: Requires PyPI credentials configured in <code class="docutils literal notranslate"><span class="pre">~/.pypirc</span></code> or set via
+environment variables.</p>
+</section>
+<section id="cleaning">
+<h3>Cleaning<a class="headerlink" href="#cleaning" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Remove build artifacts and cache</span>
+poe<span class="w"> </span>clean
+
+<span class="c1"># Remove everything including docs</span>
+poe<span class="w"> </span>clean-all
+</pre></div>
+</div>
+</section>
+</section>
+<section id="project-configuration">
+<h2>Project Configuration<a class="headerlink" href="#project-configuration" title="Link to this heading"></a></h2>
+<p>All project configuration is in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>:</p>
+<section id="dependencies">
+<h3>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Core dependencies: Required for running the package</p></li>
+<li><p>[dev]: All development tools (tests + docs)</p></li>
+<li><p>[test]: Testing tools only</p></li>
+<li><p>[docs]: Documentation tools only</p></li>
+</ul>
+<p>Install specific groups:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[test]&quot;</span><span class="w">   </span><span class="c1"># Just testing tools</span>
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[docs]&quot;</span><span class="w">   </span><span class="c1"># Just documentation tools</span>
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev]&quot;</span><span class="w">    </span><span class="c1"># Everything</span>
+</pre></div>
+</div>
+</section>
+<section id="poe-the-poet-tasks">
+<h3>Poe the Poet Tasks<a class="headerlink" href="#poe-the-poet-tasks" title="Link to this heading"></a></h3>
+<p>All tasks are defined in <code class="docutils literal notranslate"><span class="pre">[tool.poe.tasks]</span></code> in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code>.</p>
+</section>
+<section id="pytest-configuration">
+<h3>Pytest Configuration<a class="headerlink" href="#pytest-configuration" title="Link to this heading"></a></h3>
+<p>Test settings are in <code class="docutils literal notranslate"><span class="pre">[tool.pytest.ini_options]</span></code>.</p>
+</section>
+<section id="sphinx-configuration">
+<h3>Sphinx Configuration<a class="headerlink" href="#sphinx-configuration" title="Link to this heading"></a></h3>
+<p>Documentation settings are in <code class="docutils literal notranslate"><span class="pre">docs/conf.py</span></code>.</p>
+<ul class="simple">
+<li><p>Extensions: autodoc, napoleon, myst_parser</p></li>
+<li><p>Theme: Read the Docs</p></li>
+<li><p>Napoleon settings for Google-style docstrings</p></li>
+</ul>
+</section>
+</section>
+<section id="writing-documentation">
+<h2>Writing Documentation<a class="headerlink" href="#writing-documentation" title="Link to this heading"></a></h2>
+<section id="docstrings">
+<h3>Docstrings<a class="headerlink" href="#docstrings" title="Link to this heading"></a></h3>
+<p>Use Google-style docstrings in Python code:</p>
+<p>Refer to <a class="reference external" href="https://google.github.io/styleguide/pyguide.html">Google Python Style Guide</a>.</p>
+</section>
+<section id="rst-files">
+<h3>RST Files<a class="headerlink" href="#rst-files" title="Link to this heading"></a></h3>
+<p>Create new <code class="docutils literal notranslate"><span class="pre">.rst</span></code> files in <code class="docutils literal notranslate"><span class="pre">docs/</span></code> and add them to the <code class="docutils literal notranslate"><span class="pre">toctree</span></code> in <code class="docutils literal notranslate"><span class="pre">index.rst</span></code>.</p>
+<p>Don’t document twice. Github shows markdown files. Reuse those instead of
+rewriting in rst.</p>
+</section>
+<section id="markdown-files">
+<h3>Markdown Files<a class="headerlink" href="#markdown-files" title="Link to this heading"></a></h3>
+<p>Markdown files are supported via <code class="docutils literal notranslate"><span class="pre">myst_parser</span></code>. Include them in RST files:</p>
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span><span class="p">..</span> <span class="ow">include</span><span class="p">::</span> ../README.md
+   <span class="nc">:parser:</span> myst_parser.sphinx_
+</pre></div>
+</div>
+</section>
+</section>
+<section id="scripts">
+<h2>Scripts<a class="headerlink" href="#scripts" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">scripts/</span></code> directory contains helper scripts:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">check_debian_deps.py</span></code> - Check if dependencies match Debian stable
+versions (<code class="docutils literal notranslate"><span class="pre">poe</span> <span class="pre">check-debian-deps</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">generate_test_emls.py</span></code> - Generate test EML files (<code class="docutils literal notranslate"><span class="pre">poe</span> <span class="pre">generate-test-emls</span></code>)</p></li>
+</ul>
+</section>
+<section id="version-management">
+<h2>Version Management<a class="headerlink" href="#version-management" title="Link to this heading"></a></h2>
+<p>Version is managed by <code class="docutils literal notranslate"><span class="pre">setuptools_scm</span></code> based on git tags:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a new version</span>
+git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v1.0.0<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Release 1.0.0&quot;</span>
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v1.0.0
+
+<span class="c1"># Build will use this version</span>
+poe<span class="w"> </span>build
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="security.html" class="btn btn-neutral float-left" title="Security Features" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="api.html" class="btn btn-neutral float-right" title="API Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Pieter Lenaerts.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

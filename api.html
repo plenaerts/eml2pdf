@@ -1,0 +1,377 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Reference &mdash; eml2pdf  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Documentation Setup" href="documentation.html" />
+    <link rel="prev" title="Development Guide" href="development.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            eml2pdf
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">Overview, usage, installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation instructions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="security.html">Security Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="development.html">Development Guide</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#eml2pdf.generate_pdf"><code class="docutils literal notranslate"><span class="pre">generate_pdf()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#eml2pdf.process_eml"><code class="docutils literal notranslate"><span class="pre">process_eml()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#eml2pdf.process_eml_bytes"><code class="docutils literal notranslate"><span class="pre">process_eml_bytes()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#eml2pdf.process_all_emls_in_dir"><code class="docutils literal notranslate"><span class="pre">process_all_emls_in_dir()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#eml2pdf.header_to_html"><code class="docutils literal notranslate"><span class="pre">header_to_html()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#eml2pdf.sanitize_html"><code class="docutils literal notranslate"><span class="pre">sanitize_html()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="documentation.html">Documentation Setup</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">eml2pdf</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">API Reference</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-eml2pdf">
+<span id="api-reference"></span><h1>API Reference<a class="headerlink" href="#module-eml2pdf" title="Link to this heading"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="eml2pdf.generate_pdf">
+<span class="sig-prename descclassname"><span class="pre">eml2pdf.</span></span><span class="sig-name descname"><span class="pre">generate_pdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">html_content</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outfile_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_html</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">page</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'a4'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unsafe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logging_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/eml2pdf/libeml2pdf.html#generate_pdf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#eml2pdf.generate_pdf" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">eml2pdf.</span></span><span class="sig-name descname"><span class="pre">generate_pdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">html_content</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">page</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'a4'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unsafe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logging_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bytes</span></span></span></dt>
+<dd><p>Convert HTML content to PDF with optional sanitization.</p>
+<p>Generates a PDF from HTML content using WeasyPrint. By default, sanitizes
+HTML to remove security and privacy risks before rendering.</p>
+<dl class="simple">
+<dt>Processing Steps:</dt><dd><ol class="arabic simple">
+<li><p>Sanitize HTML (unless unsafe=True)</p></li>
+<li><p>Optionally save HTML to disk for debugging</p></li>
+<li><p>Parse HTML with WeasyPrint</p></li>
+<li><p>Apply page size and margins via CSS</p></li>
+<li><p>Get exclusive output file handle (prevents conflicts)</p></li>
+<li><p>Write PDF to file</p></li>
+</ol>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>html_content</strong> (<em>str</em>) – The HTML content to convert to PDF.</p></li>
+<li><p><strong>outfile_path</strong> (<em>Path</em>) – Desired output file path.</p></li>
+<li><p><strong>debug_html</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, saves HTML to {outfile}.html for
+debugging. Defaults to False.</p></li>
+<li><p><strong>page</strong> (<em>str</em><em>, </em><em>optional</em>) – Page size for PDF (e.g., ‘a4’, ‘letter’).
+Defaults to ‘a4’.</p></li>
+<li><p><strong>unsafe</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, bypasses HTML sanitization. Only use
+when you completely trust the source. Defaults to False.</p></li>
+<li><p><strong>logging_id</strong> (<em>str</em><em> | </em><em>None</em><em>, </em><em>optional</em>) – Identifier for logging context.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>HTML sanitization is performed by security.sanitize_html() unless
+unsafe=True. See security.md for details on what is filtered.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – Logs error if PDF generation fails, but does not re-raise.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="eml2pdf.process_eml">
+<span class="sig-prename descclassname"><span class="pre">eml2pdf.</span></span><span class="sig-name descname"><span class="pre">process_eml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eml_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">page</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'a4'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_html</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unsafe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logging_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/eml2pdf/libeml2pdf.html#process_eml"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#eml2pdf.process_eml" title="Link to this definition"></a></dt>
+<dd><p>Process a single EML file and generate a PDF.</p>
+<ol class="arabic simple">
+<li><dl class="simple">
+<dt>Parse EML file with email.message_from_binary_file() (fallback to</dt><dd><p>message_from_file())</p>
+</dd>
+</dl>
+</li>
+<li><p>Extract header (from/to/subject/date)</p></li>
+<li><p>Walk message parts to extract content and attachments</p></li>
+<li><p>Generate attachment list table</p></li>
+<li><p>Assemble complete HTML with UTF-8 meta tags, header, attachments, and
+body</p></li>
+<li><p>Generate output filename from date and subject</p></li>
+<li><p>Convert to PDF (with sanitization unless unsafe=True)</p></li>
+</ol>
+<dl class="simple">
+<dt>HTML Structure:</dt><dd><ul class="simple">
+<li><p>UTF-8 meta tags</p></li>
+<li><p>Email header table (from/to/date/subject)</p></li>
+<li><p>Attachment list table</p></li>
+<li><p>Horizontal rule separator</p></li>
+<li><p>Email body content with embedded images</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>eml_path</strong> (<em>Path</em>) – Path to the EML file to process.</p></li>
+<li><p><strong>output_path</strong> (<em>Path</em>) – Path where PDF will be saved. If this is a dir then
+an output filename will be derived from the email content. If this
+is a file then output_path is taken as filename.</p></li>
+<li><p><strong>page</strong> (<em>str</em><em>, </em><em>optional</em>) – PDF page size. Defaults to ‘a4’.</p></li>
+<li><p><strong>debug_html</strong> (<em>bool</em><em>, </em><em>optional</em>) – Save HTML to disk for debugging.
+Defaults to False.</p></li>
+<li><p><strong>unsafe</strong> (<em>bool</em><em>, </em><em>optional</em>) – Skip HTML sanitization. Defaults to False.</p></li>
+<li><p><strong>logging_id</strong> (<em>str</em><em> | </em><em>None</em><em>, </em><em>optional</em>) – Identifier for logging context.
+Defaults to the eml_path name.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If no text content is found, the file is skipped and a warning is
+logged.
+Output filename format: {date}-{subject}.pdf</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="eml2pdf.process_eml_bytes">
+<span class="sig-prename descclassname"><span class="pre">eml2pdf.</span></span><span class="sig-name descname"><span class="pre">process_eml_bytes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">contents</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bytes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">page</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'a4'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_html</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unsafe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logging_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bytes</span></span></span><a class="reference internal" href="_modules/eml2pdf/libeml2pdf.html#process_eml_bytes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#eml2pdf.process_eml_bytes" title="Link to this definition"></a></dt>
+<dd><p>Generates a PDF from an EML file in memory.</p>
+<p>Same as process_eml() but accepts and returns bytes instead of files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>contents</strong> (<em>bytes</em>) – The bytes of the eml file</p></li>
+<li><p><strong>page</strong> (<em>str</em><em>, </em><em>optional</em>) – PDF page size. Defaults to ‘a4’.</p></li>
+<li><p><strong>debug_html</strong> (<em>bool</em><em>, </em><em>optional</em>) – Save HTML to disk for debugging.
+Defaults to False.</p></li>
+<li><p><strong>unsafe</strong> (<em>bool</em><em>, </em><em>optional</em>) – Skip HTML sanitization. Defaults to False.</p></li>
+<li><p><strong>logging_id</strong> (<em>str</em><em> | </em><em>None</em><em>, </em><em>optional</em>) – Identifier for logging context.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns (bytes): The bytes of a valid PDF file.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="eml2pdf.process_all_emls_in_dir">
+<span class="sig-prename descclassname"><span class="pre">eml2pdf.</span></span><span class="sig-name descname"><span class="pre">process_all_emls_in_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_procs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug_html</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">page</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'a4'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unsafe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/eml2pdf/libeml2pdf.html#process_all_emls_in_dir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#eml2pdf.process_all_emls_in_dir" title="Link to this definition"></a></dt>
+<dd><p>Process all EML files in a directory to PDFs.</p>
+<p>Main entry point for batch processing of email files. Handles directory
+creation, file discovery, and parallel or sequential processing.</p>
+<dl class="simple">
+<dt>Multiprocessing Conditions:</dt><dd><p>Parallel processing is used when ALL of these are true:
+- number_of_procs &gt; 1
+- logger level is not DEBUG</p>
+</dd>
+<dt>Reason for Limitations:</dt><dd><p>Debug logging outputs long messages that are not multiprocess-safe
+and would become garbled when multiple processes write simultaneously.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_dir</strong> (<em>Path</em>) – Directory containing EML files to process.</p></li>
+<li><p><strong>output_dir</strong> (<em>Path</em>) – Directory where PDFs will be saved (created if
+needed).</p></li>
+<li><p><strong>number_of_procs</strong> (<em>int</em>) – Number of parallel processes. Use 1 for
+sequential. Defaults to 1.</p></li>
+<li><p><strong>debug_html</strong> (<em>bool</em>) – Save intermediate HTML files for debugging. Defaults
+to False.</p></li>
+<li><p><strong>page</strong> (<em>str</em>) – PDF page size (e.g., ‘a4’, ‘letter’). Defaults to ‘a4’</p></li>
+<li><p><strong>unsafe</strong> (<em>bool</em>) – Skip HTML sanitization (use only with trusted sources).
+Defaults to False.</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Creates output_dir with parents if it doesn’t exist.
+Exits with code 1 if output directory cannot be created.
+Uses Python’s multiprocessing.Pool for parallel processing.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="eml2pdf.header_to_html">
+<span class="sig-prename descclassname"><span class="pre">eml2pdf.</span></span><span class="sig-name descname"><span class="pre">header_to_html</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">header_str</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/eml2pdf/libeml2pdf.html#header_to_html"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#eml2pdf.header_to_html" title="Link to this definition"></a></dt>
+<dd><p>Decode and HTML-escape an email header field.</p>
+<p>Processes encoded email headers by decoding multi-part headers and
+concatenating them into a single HTML-safe string.</p>
+<dl class="simple">
+<dt>Decoding Strategy:</dt><dd><ol class="arabic simple">
+<li><p>Uses email.header.decode_header() to parse encoded headers</p></li>
+<li><p>Handles multi-part headers by concatenating them</p></li>
+<li><p>For string parts, uses them directly</p></li>
+<li><dl class="simple">
+<dt>For byte parts, decodes with specified encoding (defaults to</dt><dd><p>‘ascii’ if None)</p>
+</dd>
+</dl>
+</li>
+<li><p>HTML-escapes the final result to prevent XSS</p></li>
+</ol>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>header_str</strong> (<em>str</em>) – The raw email header string (may be RFC 2047
+encoded).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Decoded and HTML-escaped header string safe for inclusion in HTML.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">header_to_html</span><span class="p">(</span><span class="s1">&#39;=?utf-8?B?SGVsbG8gV29ybGQ=?=&#39;</span><span class="p">)</span>
+<span class="go">&#39;Hello World&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">header_to_html</span><span class="p">(</span><span class="s1">&#39;Test &lt;tag&gt;&#39;</span><span class="p">)</span>
+<span class="go">&#39;Test &amp;lt;tag&amp;gt;&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="eml2pdf.sanitize_html">
+<span class="sig-prename descclassname"><span class="pre">eml2pdf.</span></span><span class="sig-name descname"><span class="pre">sanitize_html</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">html_content</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/eml2pdf/security.html#sanitize_html"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#eml2pdf.sanitize_html" title="Link to this definition"></a></dt>
+<dd><p>Remove potential privacy and security issues from HTML content.</p>
+<p>Sanitizes HTML by removing or neutralizing dangerous elements
+and attributes
+before PDF generation. This provides defense-in-depth protection against
+various attack vectors.</p>
+<dl class="simple">
+<dt>Protected Against:</dt><dd><ul class="simple">
+<li><p>Script execution (script, iframe, object, embed tags)</p></li>
+<li><p>Data exfiltration via forms</p></li>
+<li><p>Privacy leaks via remote resources (tracking pixels, web beacons)</p></li>
+<li><p>Cross-Site Scripting via event handlers
+(onclick, onload, onerror, etc.)</p></li>
+<li><p>Remote resource loading (meta redirects, external stylesheets)</p></li>
+<li><p>CSS-based tracking via url() references</p></li>
+<li><p>External link navigation</p></li>
+</ul>
+</dd>
+<dt>Processing Steps:</dt><dd><ol class="arabic simple">
+<li><p>Removes risky HTML tags (script, iframe, object, embed,
+video, audio,
+form, meta, link)</p></li>
+<li><p>Removes remote images (<a class="reference external" href="http://">http://</a> or <a class="reference external" href="https://">https://</a> sources)</p></li>
+<li><p>Clears style attributes containing url() references</p></li>
+<li><p>Neutralizes external links by replacing href with ‘#’</p></li>
+<li><p>Removes event handler attributes (on*) and data attributes (data-<a href="#id1"><span class="problematic" id="id2">*</span></a>)</p></li>
+</ol>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>html_content</strong> (<em>str</em>) – The HTML content to sanitize.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Sanitized HTML content safe for PDF rendering.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Only embedded images (data URIs or CID references) are preserved.
+Remote images are completely removed to prevent tracking.</p>
+</div>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">html</span> <span class="o">=</span> <span class="p">(</span>
+<span class="go">    &#39;&lt;img src=&quot;http://tracker.com/pixel.gif&quot;&gt;&#39;</span>
+<span class="go">    &#39;&lt;script&gt;alert(1)&lt;/script&gt;&#39;</span>
+<span class="go">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sanitize_html</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
+<span class="go">&#39;&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="development.html" class="btn btn-neutral float-left" title="Development Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="documentation.html" class="btn btn-neutral float-right" title="Documentation Setup" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Pieter Lenaerts.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

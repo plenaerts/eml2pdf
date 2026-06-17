@@ -1,0 +1,1135 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>eml2pdf.libeml2pdf &mdash; eml2pdf  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            eml2pdf
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme.html">Overview, usage, installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation instructions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../security.html">Security Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../development.html">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Documentation Setup</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">eml2pdf</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">eml2pdf.libeml2pdf</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for eml2pdf.libeml2pdf</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">base64</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">email</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">email.header</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">email.message</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">email.utils</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">fnmatch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">html</span><span class="w"> </span><span class="kn">import</span> <span class="n">escape</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">BufferedWriter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">multiprocessing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pool</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">overload</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">hurry.filesize</span><span class="w"> </span><span class="kn">import</span> <span class="n">size</span>  <span class="c1"># type: ignore</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">markdown</span><span class="w"> </span><span class="kn">import</span> <span class="n">markdown</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">weasyprint</span><span class="w"> </span><span class="kn">import</span> <span class="n">CSS</span><span class="p">,</span> <span class="n">HTML</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">security</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_Attachment</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Attachment metadata extracted from an email message.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        name (str): Filename of the attachment (HTML-decoded and escaped).</span>
+<span class="sd">        size (int): Size of the attachment in bytes.</span>
+<span class="sd">        md5sum (str): MD5 hash hex digest for integrity verification.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">size</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">md5sum</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_Email</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parsed EML file with header, attachments, and rendered HTML content.</span>
+
+<span class="sd">    Encapsulates a complete parsed email message including metadata,</span>
+<span class="sd">    HTML-rendered content, and attachment information.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        header (_Header): Parsed email header with from/to/subject/date fields.</span>
+<span class="sd">        html (str): HTML-rendered email body content with embedded images.</span>
+<span class="sd">        attachments (list[_Attachment]): List of attachment metadata.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        msg (email.message.Message): Parsed email message object.</span>
+<span class="sd">        logging_id (str | None): Optional identifier for logging context.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        The constructor automatically extracts all content by calling</span>
+<span class="sd">        _Header() and _walk_eml() internally.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">email</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">Message</span><span class="p">,</span> <span class="n">logging_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">header</span> <span class="o">=</span> <span class="n">_Header</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">logging_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">html</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attachments</span> <span class="o">=</span> <span class="n">_walk_eml</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">logging_id</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_Header</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parsed email header data with HTML rendering.</span>
+
+<span class="sd">    Extracts and formats email metadata from an email.message.Message object.</span>
+<span class="sd">    Handles encoded headers and converts them to HTML-safe strings.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        from_addr (str): Sender address. Defaults to &quot;Not decoded.&quot;</span>
+<span class="sd">            if parsing fails.</span>
+<span class="sd">        to_addr (str): Recipient address. Defaults to &quot;Not decoded.&quot; if parsing</span>
+<span class="sd">            fails.</span>
+<span class="sd">        subject (str): Email subject. Defaults to &quot;Not decoded.&quot; if parsing</span>
+<span class="sd">            fails.</span>
+<span class="sd">        html (str): HTML table representation of the header fields.</span>
+<span class="sd">        formatted_date (str): Human-readable date string in format</span>
+<span class="sd">            &quot;YYYY-MM-DD, HH:MM&quot;. Defaults to &quot;No date&quot; if date header is</span>
+<span class="sd">            missing.</span>
+<span class="sd">        date (datetime.datetime | None): Parsed datetime object from the Date</span>
+<span class="sd">            header. None if date header is missing or unparseable.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Headers are decoded using email.header.decode_header() and HTML-escaped</span>
+<span class="sd">        to prevent XSS vulnerabilities. UnicodeErrors during decoding are</span>
+<span class="sd">        logged but don&#39;t stop processing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">from_addr</span> <span class="o">=</span> <span class="s1">&#39;Not decoded.&#39;</span>
+    <span class="n">to_addr</span> <span class="o">=</span> <span class="s1">&#39;Not decoded.&#39;</span>
+    <span class="n">subject</span> <span class="o">=</span> <span class="s1">&#39;Not decoded.&#39;</span>
+    <span class="n">html</span> <span class="o">=</span> <span class="s1">&#39;Not decoded.&#39;</span>
+    <span class="n">formatted_date</span> <span class="o">=</span> <span class="s1">&#39;No date.&#39;</span>
+    <span class="n">date</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="n">email</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">Message</span><span class="p">,</span> <span class="n">logging_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parse email message and extract header fields.</span>
+
+<span class="sd">        Decodes From, To, Subject, and Date headers from the email message.</span>
+<span class="sd">        Creates an HTML table representation of the header information.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            msg (email.message.Message): The parsed email message object.</span>
+<span class="sd">            logging_id (str | None): Optional identifier for logging context.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            If header decoding fails with UnicodeError, the error is logged</span>
+<span class="sd">            and the field retains its default value (&quot;Not decoded.&quot;).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Format email header</span>
+        <span class="c1"># Decode headers if encoded</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">from_addr</span> <span class="o">=</span> <span class="n">header_to_html</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;from&#39;</span><span class="p">,</span> <span class="s1">&#39;No sender&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">to_addr</span> <span class="o">=</span> <span class="n">header_to_html</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;to&#39;</span><span class="p">,</span> <span class="s1">&#39;No recipient&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">subject</span> <span class="o">=</span> <span class="n">header_to_html</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;subject&#39;</span><span class="p">,</span> <span class="s1">&#39;No subject&#39;</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">UnicodeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;[</span><span class="si">{</span><span class="n">logging_id</span><span class="si">}</span><span class="s1">] &#39;</span> <span class="k">if</span> <span class="n">logging_id</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s1">Failed to decode header field: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="n">msg_date</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">date</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">email</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">parsedate_to_datetime</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">msg_date</span>
+            <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">formatted_date</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">, %H:%M&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">date</span> <span class="k">else</span> <span class="s1">&#39;No date&#39;</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">html</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">&lt;table style=&quot;font-family: serif;</span>
+<span class="s2">              margin-bottom: 20px;</span>
+<span class="s2">              border-spacing: 1rem 0;</span>
+<span class="s2">              text-align: left&quot;&gt;</span>
+<span class="s2">&lt;tr&gt;&lt;th scope=&quot;row&quot;&gt;From:&lt;/th&gt;&lt;td&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">from_addr</span><span class="si">}</span><span class="s2">&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="s2">&lt;tr&gt;&lt;th scope=&quot;row&quot;&gt;To:&lt;/th&gt;&lt;td&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">to_addr</span><span class="si">}</span><span class="s2">&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="s2">&lt;tr&gt;&lt;th scope=&quot;row&quot;&gt;Date:&lt;/th&gt;&lt;td&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">formatted_date</span><span class="si">}</span><span class="s2">&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="s2">&lt;tr&gt;&lt;th scope=&quot;row&quot;&gt;Subject:&lt;/th&gt;&lt;td&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="si">}</span><span class="s2">&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="s2">&lt;/table&gt;</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_embed_imgs</span><span class="p">(</span><span class="n">html_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">attachments</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Embed inline images in HTML by replacing CID references with data URIs.</span>
+
+<span class="sd">    Converts Content-ID (CID) references in HTML to inline data URIs,</span>
+<span class="sd">    allowing images to be embedded directly in the PDF without external</span>
+<span class="sd">    references.</span>
+
+<span class="sd">    Processing:</span>
+<span class="sd">        1. For each CID attachment collected during message walking</span>
+<span class="sd">        2. Base64-encode the image bytes</span>
+<span class="sd">        3. Create a data URI: data:{content_type};base64,{encoded_data}</span>
+<span class="sd">        4. Replace all cid:{cid} references in HTML with the data URI</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        html_content (str): HTML content potentially containing cid: image</span>
+<span class="sd">            references.</span>
+<span class="sd">        attachments (dict): Dictionary mapping CID to attachment data. Each</span>
+<span class="sd">            value should have &#39;content&#39; (bytes), &#39;content_type&#39; (str), and</span>
+<span class="sd">            &#39;filename&#39; (str).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: HTML content with all CID references replaced by data URIs.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        Before: &lt;img src=&quot;cid:image001@example.com&quot;&gt;</span>
+<span class="sd">        After:  &lt;img src=&quot;data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...&quot;&gt;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">html_content</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">cid</span><span class="p">,</span> <span class="n">attachment</span> <span class="ow">in</span> <span class="n">attachments</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">content_type</span> <span class="o">=</span> <span class="n">attachment</span><span class="p">[</span><span class="s1">&#39;content_type&#39;</span><span class="p">]</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">attachment</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+            <span class="n">data_uri</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;data:</span><span class="si">{</span><span class="n">content_type</span><span class="si">}</span><span class="s1">;base64,</span><span class="si">{</span><span class="n">content</span><span class="si">}</span><span class="s1">&#39;</span>
+
+            <span class="c1"># Replace CID references in HTML</span>
+            <span class="n">html_content</span> <span class="o">=</span> <span class="n">html_content</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;cid:</span><span class="si">{</span><span class="n">cid</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">data_uri</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">html_content</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_decode_to_str</span><span class="p">(</span>
+    <span class="n">bytes_content</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">content_charset</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">content_transfer_encoding</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Robustly decode bytes to string with fallback handling.</span>
+
+<span class="sd">    Implements a multi-stage decoding strategy to handle various email content</span>
+<span class="sd">    encodings, including malformed or misidentified charsets.</span>
+
+<span class="sd">    Decoding Strategy:</span>
+<span class="sd">        1. **Strict Decoding**: Attempts to decode using the specified charset</span>
+<span class="sd">        2. **Fallback with Replace**: If strict decoding fails, uses &#39;replace&#39;</span>
+<span class="sd">            mode to substitute invalid bytes with � (U+FFFD REPLACEMENT</span>
+<span class="sd">            CHARACTER)</span>
+<span class="sd">        3. **Unicode Escape Handling**: Detects and processes unicode escape</span>
+<span class="sd">            sequences like \\u00a0 or \\U00000000 that some email clients use</span>
+
+<span class="sd">    Error Handling:</span>
+<span class="sd">        - UnicodeDecodeError: Byte sequence invalid for specified charset</span>
+<span class="sd">            → fallback</span>
+<span class="sd">        - LookupError: Charset name unknown or not supported → fallback</span>
+<span class="sd">        - Exception during escape decoding: Keep the &#39;replace&#39; version</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        bytes_content (bytes): The raw byte content to decode.</span>
+<span class="sd">        content_charset (str): The character encoding name (e.g., &#39;utf-8&#39;,</span>
+<span class="sd">            &#39;iso-8859-1&#39;).</span>
+<span class="sd">        content_transfer_encoding (str): The content transfer encoding (e.g.,</span>
+<span class="sd">            &#39;8bit&#39;, &#39;binary&#39;). Others may pop up:</span>
+<span class="sd">            https://www.w3.org/Protocols/rfc1341/5_Content-Transfer-Encoding.html</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: Decoded string content. May contain replacement characters (�) if</span>
+<span class="sd">            original bytes were invalid for the specified encoding.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; _decode_to_str(b&#39;Hello&#39;, &#39;utf-8&#39;, &#39;binary&#39;)</span>
+<span class="sd">        &#39;Hello&#39;</span>
+<span class="sd">        &gt;&gt;&gt; _decode_to_str(b&#39;\\xff\\xfe&#39;, &#39;utf-8&#39;, &#39;)  # Invalid UTF-8</span>
+<span class="sd">        &#39;��&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">decoded</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bytes_content</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;bytes: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">bytes_content</span><span class="p">)[:</span><span class="mi">100</span><span class="p">]</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;charset: </span><span class="si">{</span><span class="n">content_charset</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="c1"># workaround for CPython&#39;s incorrect handling of native utf-8 with</span>
+        <span class="c1"># 8-bit CTE</span>
+        <span class="c1"># https://bugs.python.org/issue18271</span>
+        <span class="c1"># https://github.com/python/cpython/issues/105285</span>
+        <span class="c1"># https://github.com/python/cpython/pull/105306</span>
+        <span class="c1"># Only apply raw-unicode-escape if UTF-8 decoding fails, to preserve</span>
+        <span class="c1"># UTF-8 emoji</span>
+        <span class="k">if</span> <span class="n">content_transfer_encoding</span> <span class="o">==</span> <span class="s1">&#39;8bit&#39;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># First try UTF-8 decoding (preserves emoji and other UTF-8</span>
+                <span class="c1"># content)</span>
+                <span class="n">decoded</span> <span class="o">=</span> <span class="n">bytes_content</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+                <span class="c1"># If UTF-8 succeeds, we&#39;re done - skip the rest of the function</span>
+                <span class="k">return</span> <span class="n">decoded</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">UnicodeDecodeError</span><span class="p">,</span> <span class="ne">LookupError</span><span class="p">):</span>
+                <span class="c1"># If UTF-8 fails, try the original raw-unicode-escape</span>
+                <span class="c1"># workaround</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">decoded</span> <span class="o">=</span> <span class="n">bytes_content</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span>
+                        <span class="s1">&#39;raw-unicode-escape&#39;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;strict&#39;</span>
+                    <span class="p">)</span>
+                    <span class="n">bytes_content</span> <span class="o">=</span> <span class="n">decoded</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">UnicodeDecodeError</span><span class="p">,</span> <span class="ne">UnicodeEncodeError</span><span class="p">):</span>
+                    <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Attempt strict decoding</span>
+            <span class="n">decoded</span> <span class="o">=</span> <span class="n">bytes_content</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">content_charset</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">UnicodeDecodeError</span><span class="p">,</span> <span class="ne">LookupError</span><span class="p">):</span>
+            <span class="c1"># Fallback for binary data/mismatched charsets</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;Strict decode failed for </span><span class="si">{</span><span class="n">content_charset</span><span class="si">}</span><span class="s1">. Using &#39;</span>
+                <span class="s2">&quot;&#39;replace&#39; mode.&quot;</span>
+            <span class="p">)</span>
+            <span class="n">decoded</span> <span class="o">=</span> <span class="n">bytes_content</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">content_charset</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s1">&#39;replace&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Handle unicode escape patterns (e.g., \u00a0)</span>
+        <span class="n">unicode_escape_pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">u[0-9a-fA-F]</span><span class="si">{4}</span><span class="s1">|</span><span class="se">\\</span><span class="s1">U[0-9a-fA-F]</span><span class="si">{8}</span><span class="s1">&#39;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">unicode_escape_pattern</span><span class="p">,</span> <span class="n">decoded</span><span class="p">):</span>
+                <span class="n">decoded</span> <span class="o">=</span> <span class="n">decoded</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;unicode-escape&#39;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;unicode escaped decoded : </span><span class="si">{</span><span class="n">decoded</span><span class="p">[:</span><span class="mi">100</span><span class="p">]</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># If escape decoding fails (common in binary noise), keep the</span>
+            <span class="c1"># &#39;replace&#39; version</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unicode escape decoding skipped: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">decoded</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_text_content</span><span class="p">(</span>
+    <span class="n">content_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">content_disposition</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if part is text content that should be rendered.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        content_type: The MIME content type (e.g., &#39;text/plain&#39;, &#39;text/html&#39;)</span>
+<span class="sd">        content_disposition: The content disposition (None, &#39;inline&#39;, etc.)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        True if the part is text content that should be included in the output.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">text_types</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;text/plain&#39;</span><span class="p">,</span> <span class="s1">&#39;text/html&#39;</span><span class="p">}</span>
+    <span class="n">valid_dispositions</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;inline&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">content_type</span> <span class="ow">in</span> <span class="n">text_types</span>
+        <span class="ow">and</span> <span class="n">content_disposition</span> <span class="ow">in</span> <span class="n">valid_dispositions</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_should_save_as_attachment</span><span class="p">(</span>
+    <span class="n">content_disposition</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">is_image</span><span class="p">:</span> <span class="nb">bool</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine if a part should be saved as an attachment.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        content_disposition: The content disposition</span>
+<span class="sd">            (&#39;attachment&#39;, &#39;inline&#39;, etc.)</span>
+<span class="sd">        is_image: Whether the content type starts with &#39;image/&#39;</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        True if the part should be saved to the attachments list.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">content_disposition</span> <span class="o">==</span> <span class="s1">&#39;attachment&#39;</span> <span class="ow">or</span> <span class="p">(</span>
+        <span class="n">content_disposition</span> <span class="o">==</span> <span class="s1">&#39;inline&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_image</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_create_attachment</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">bytes</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_Attachment</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create an _Attachment object from filename and payload.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        filename: The original filename (will be HTML-escaped)</span>
+<span class="sd">        payload: The binary content of the attachment</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        _Attachment object with name, size, and MD5 hash,</span>
+<span class="sd">            or None if no filename.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">filename</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">header_to_html</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="n">filesize</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">getsizeof</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+    <span class="n">_hash</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">()</span>
+    <span class="n">_hash</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_Attachment</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">filesize</span><span class="p">,</span> <span class="n">md5sum</span><span class="o">=</span><span class="n">_hash</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">())</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_walk_eml</span><span class="p">(</span>
+    <span class="n">msg</span><span class="p">:</span> <span class="n">email</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">Message</span><span class="p">,</span> <span class="n">logging_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">_Attachment</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract and process all MIME parts from an email message.</span>
+
+<span class="sd">    Walks through all parts of a MIME multipart email message, extracting text</span>
+<span class="sd">    content, handling attachments, and embedding inline images.</span>
+
+<span class="sd">    Part Classification:</span>
+<span class="sd">        For each MIME part, examines:</span>
+<span class="sd">        - Content-Disposition: None, &#39;inline&#39;, or &#39;attachment&#39;</span>
+<span class="sd">        - Content-Type: &#39;text/plain&#39;, &#39;text/html&#39;, &#39;image/*&#39;, etc.</span>
+<span class="sd">        - Payload: The actual content bytes</span>
+
+<span class="sd">    Processing by Part Type:</span>
+<span class="sd">        **Text Content (plain/html)**:</span>
+<span class="sd">            - Conditions: content_type is text/plain or text/html AND</span>
+<span class="sd">              (content_disposition is None OR &#39;inline&#39;)</span>
+<span class="sd">            - Processing: Decode using _decode_to_str() and append to content</span>
+<span class="sd">                strings</span>
+<span class="sd">            - Note: Multiple text parts are concatenated (handles</span>
+<span class="sd">                multipart/alternative)</span>
+
+<span class="sd">        **Attachments and Inline Files**:</span>
+<span class="sd">            - Conditions: content_disposition is &#39;attachment&#39; OR &#39;inline&#39;</span>
+<span class="sd">            - Classification:</span>
+<span class="sd">              1. Marked &#39;attachment&#39;: Always saved to attachment list</span>
+<span class="sd">              2. Marked &#39;inline&#39; + NOT image: Saved to attachment list</span>
+<span class="sd">                  (e.g., .doc, .xls)</span>
+<span class="sd">              3. Marked &#39;inline&#39; + IS image: Used for rendering, optionally</span>
+<span class="sd">                  saved</span>
+<span class="sd">            - Metadata: Filename, size (bytes), MD5 hash</span>
+
+<span class="sd">        **Inline Images**:</span>
+<span class="sd">            - Extract Content-ID (CID) from headers</span>
+<span class="sd">            - Store in cid_attachments with filename, binary content,</span>
+<span class="sd">                content-type</span>
+<span class="sd">            - Later embedded via embed_imgs() by replacing cid: references</span>
+
+<span class="sd">    Final Assembly:</span>
+<span class="sd">        - If HTML content exists: Embed inline images via embed_imgs()</span>
+<span class="sd">        - If only plain text exists: Convert to HTML using Markdown parser</span>
+<span class="sd">        - If no content: Returns empty string</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        msg (email.message.Message): The parsed email message to walk.</span>
+<span class="sd">        logging_id (str | None): Optional identifier for logging context.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple[str, list[_Attachment]]: A tuple of (html_content, attachments)</span>
+<span class="sd">            where html_content is the rendered HTML and attachments is a list</span>
+<span class="sd">            of _Attachment objects with metadata.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Skips parts with no payload or non-bytes payloads.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">html_content</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">plain_text_content</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="n">cid_attachments</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">attachments</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">_Attachment</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">msg</span><span class="o">.</span><span class="n">walk</span><span class="p">():</span>
+        <span class="n">content_disposition</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">get_content_disposition</span><span class="p">()</span>
+        <span class="n">content_type</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">get_content_type</span><span class="p">()</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">get_payload</span><span class="p">(</span><span class="n">decode</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># Skip invalid parts</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">payload</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Handle text content</span>
+        <span class="k">if</span> <span class="n">_is_text_content</span><span class="p">(</span><span class="n">content_type</span><span class="p">,</span> <span class="n">content_disposition</span><span class="p">):</span>
+            <span class="n">decoded_payload</span> <span class="o">=</span> <span class="n">_decode_to_str</span><span class="p">(</span>
+                <span class="n">payload</span><span class="p">,</span>
+                <span class="n">part</span><span class="o">.</span><span class="n">get_content_charset</span><span class="p">()</span> <span class="ow">or</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">,</span>
+                <span class="n">content_transfer_encoding</span><span class="o">=</span><span class="n">_get_cte</span><span class="p">(</span><span class="n">part</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">content_type</span> <span class="o">==</span> <span class="s1">&#39;text/plain&#39;</span><span class="p">:</span>
+                <span class="n">plain_text_content</span> <span class="o">+=</span> <span class="n">decoded_payload</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">html_content</span> <span class="o">+=</span> <span class="n">decoded_payload</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Handle attachments and inline files</span>
+        <span class="k">if</span> <span class="n">content_disposition</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;attachment&#39;</span><span class="p">,</span> <span class="s1">&#39;inline&#39;</span><span class="p">}:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">get_filename</span><span class="p">()</span>
+            <span class="n">is_image</span> <span class="o">=</span> <span class="n">content_type</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;image/&#39;</span><span class="p">)</span>
+
+            <span class="c1"># Save as attachment if appropriate</span>
+            <span class="k">if</span> <span class="n">_should_save_as_attachment</span><span class="p">(</span><span class="n">content_disposition</span><span class="p">,</span> <span class="n">is_image</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+                <span class="n">attachment</span> <span class="o">:=</span> <span class="n">_create_attachment</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="n">attachments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">attachment</span><span class="p">)</span>
+
+            <span class="c1"># Handle inline images for rendering</span>
+            <span class="k">if</span> <span class="n">is_image</span> <span class="ow">and</span> <span class="p">(</span><span class="n">cid</span> <span class="o">:=</span> <span class="n">part</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Content-ID&#39;</span><span class="p">)):</span>
+                <span class="n">cid</span> <span class="o">=</span> <span class="n">cid</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;&lt;&gt;&#39;</span><span class="p">)</span>
+                <span class="n">cid_attachments</span><span class="p">[</span><span class="n">cid</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;filename&#39;</span><span class="p">:</span> <span class="n">filename</span><span class="p">,</span>
+                    <span class="s1">&#39;content&#39;</span><span class="p">:</span> <span class="n">payload</span><span class="p">,</span>
+                    <span class="s1">&#39;content_type&#39;</span><span class="p">:</span> <span class="n">content_type</span><span class="p">,</span>
+                <span class="p">}</span>
+
+    <span class="n">html_content</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">_embed_imgs</span><span class="p">(</span><span class="n">html_content</span><span class="p">,</span> <span class="n">cid_attachments</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">html_content</span>
+        <span class="k">else</span> <span class="n">markdown</span><span class="p">(</span><span class="n">plain_text_content</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">html_content</span><span class="p">,</span> <span class="n">attachments</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_output_base_path</span><span class="p">(</span>
+    <span class="n">date</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span> <span class="n">Path</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate output PDF filename from email metadata.</span>
+
+<span class="sd">    Creates a sanitized filename in the format: {date}-{subject}.pdf</span>
+
+<span class="sd">    Sanitization:</span>
+<span class="sd">        - Removes illegal filename characters: &lt; &gt; : &quot; / \\ | ? *</span>
+<span class="sd">        - Replaces spaces with underscores</span>
+<span class="sd">        - Uses &quot;nodate&quot; prefix if date is None</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        date (datetime.datetime | None): Email date from header. None if not</span>
+<span class="sd">            available.</span>
+<span class="sd">        subject (str): Email subject line.</span>
+<span class="sd">        output_dir (Path): Directory where the PDF will be saved.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Path: Complete output path for the PDF file.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Does not check if the file exists or is writable. Use</span>
+<span class="sd">        get_exclusive_outfile() to handle filename conflicts.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; _get_output_base_path(</span>
+<span class="sd">            datetime(2024, 1, 15),</span>
+<span class="sd">            &quot;Meeting Notes&quot;,</span>
+<span class="sd">            Path(&quot;/out&quot;)</span>
+<span class="sd">        )</span>
+<span class="sd">        Path(&#39;/out/2024-01-15-Meeting_Notes.pdf&#39;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Format date for filename prefix</span>
+    <span class="n">file_date</span> <span class="o">=</span> <span class="n">date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">date</span> <span class="k">else</span> <span class="s1">&#39;nodate&#39;</span>
+
+    <span class="c1"># Create sanitized subject for filename</span>
+    <span class="n">safe_subject</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[&lt;&gt;:&quot;/</span><span class="se">\\</span><span class="s1">|?*]&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">subject</span><span class="p">)</span>  <span class="c1"># Remove illegal chars</span>
+    <span class="n">safe_subject</span> <span class="o">=</span> <span class="n">safe_subject</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+        <span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span>
+    <span class="p">)</span>  <span class="c1"># Replace spaces with underscores</span>
+
+    <span class="c1"># Create base output filename</span>
+    <span class="n">base_filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">file_date</span><span class="si">}</span><span class="s1">-</span><span class="si">{</span><span class="n">safe_subject</span><span class="si">}</span><span class="s1">.pdf&#39;</span>
+    <span class="n">output_path</span> <span class="o">=</span> <span class="n">output_dir</span> <span class="o">/</span> <span class="n">Path</span><span class="p">(</span><span class="n">base_filename</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">output_path</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_exclusive_outfile</span><span class="p">(</span><span class="n">outfile_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BufferedWriter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Open output file exclusively with automatic conflict resolution.</span>
+
+<span class="sd">    Attempts to open the file with exclusive creation (&#39;xb&#39; mode). If the file</span>
+<span class="sd">    already exists, automatically increments a counter suffix until an</span>
+<span class="sd">    available filename is found: filename_1.pdf, filename_2.pdf, etc.</span>
+
+<span class="sd">    Multiprocessing Safety:</span>
+<span class="sd">        Uses exclusive creation to prevent race conditions when multiple</span>
+<span class="sd">        processes try to write to the same filename. Ensures each process gets</span>
+<span class="sd">        a unique file without overwriting.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        outfile_path (Path): Desired output file path.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        BufferedWriter: Opened file object in binary write mode, ready for</span>
+<span class="sd">            WeasyPrint&#39;s HTML.write_pdf() method.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        1. File is opened in binary mode (&#39;xb&#39;) for compatibility with</span>
+<span class="sd">            WeasyPrint. The exclusive flag ensures no existing file is</span>
+<span class="sd">            overwritten.</span>
+<span class="sd">        2. Do NOT forget to close the file!</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        If &quot;report.pdf&quot; exists:</span>
+<span class="sd">        &gt;&gt;&gt; _get_exclusive_outfile(Path(&quot;report.pdf&quot;))</span>
+<span class="sd">        &lt;_io.BufferedWriter name=&#39;report_1.pdf&#39;&gt;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">outfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">outfile_path</span><span class="p">,</span> <span class="s1">&#39;xb&#39;</span><span class="p">)</span>  <span class="c1"># noqa: SIM115</span>
+    <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Could not open </span><span class="si">{</span><span class="n">outfile_path</span><span class="si">}</span><span class="s1"> exclusively. </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">outfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">devnull</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span>  <span class="c1"># noqa: SIM115</span>
+        <span class="n">outfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>  <span class="c1"># We won&#39;t use devnull.</span>
+
+    <span class="n">counter</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="n">outfile</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">os</span><span class="o">.</span><span class="n">devnull</span><span class="p">:</span>
+        <span class="n">new_outfile_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">outfile_path</span><span class="o">.</span><span class="n">parent</span><span class="p">)</span> <span class="o">/</span> <span class="n">Path</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">outfile_path</span><span class="o">.</span><span class="n">stem</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">counter</span><span class="si">}{</span><span class="n">outfile_path</span><span class="o">.</span><span class="n">suffix</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">outfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">new_outfile_path</span><span class="p">,</span> <span class="s1">&#39;xb&#39;</span><span class="p">)</span>  <span class="c1"># noqa: SIM115</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Could not open </span><span class="si">{</span><span class="n">outfile_path</span><span class="si">}</span><span class="s1"> exclusively. </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">outfile</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_filepaths</span><span class="p">(</span><span class="n">input_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Path</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find all EML files in directory with case-insensitive matching.</span>
+
+<span class="sd">    Searches for files matching *.eml pattern (case-insensitive) in the input</span>
+<span class="sd">    directory. Handles Python version differences for glob() case sensitivity.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_dir (Path): Directory to search for EML files.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        list[Path]: List of paths to EML files found.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Uses case_sensitive parameter for Python 3.12+, falls back to manual</span>
+<span class="sd">        filtering for earlier versions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># case_sensitive is added to pathlib.Path.glob() in 3.12</span>
+    <span class="c1"># Debian is at 3.11. We can remove this test when Debian reaches 3.12.</span>
+    <span class="n">eml_pat</span> <span class="o">=</span> <span class="s1">&#39;*.eml&#39;</span>
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="o">.</span><span class="n">minor</span> <span class="o">&gt;=</span> <span class="mi">12</span><span class="p">:</span>
+        <span class="c1"># Nice new syntax. Unpack the Generator returned by glob() in a list.</span>
+        <span class="c1"># Mypy won&#39;t know this syntax. Ignore it for that line.</span>
+        <span class="n">filepaths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+            <span class="n">input_dir</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
+                <span class="n">eml_pat</span><span class="p">,</span> <span class="n">case_sensitive</span><span class="o">=</span><span class="kc">None</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Ugly old syntax</span>
+        <span class="n">filepaths</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">path</span>
+            <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">input_dir</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;**/*&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">fnmatch</span><span class="o">.</span><span class="n">fnmatchcase</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">eml_pat</span><span class="p">)</span>
+        <span class="p">]</span>
+    <span class="k">return</span> <span class="n">filepaths</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_generate_attachment_list</span><span class="p">(</span><span class="n">attachments</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">_Attachment</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate HTML table summarizing email attachments.</span>
+
+<span class="sd">    Creates an HTML table with columns for attachment name, human-readable</span>
+<span class="sd">    size, and MD5 hash for integrity verification.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        attachments (list[_Attachment]): List of attachment metadata objects.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: HTML table string, or empty string if no attachments.</span>
+
+<span class="sd">    Example Output:</span>
+<span class="sd">        Attachments:</span>
+<span class="sd">        Name              Size     MD5sum</span>
+<span class="sd">        document.pdf      1.2 MB   a1b2c3d4e5f6...</span>
+<span class="sd">        spreadsheet.xls   256 kB   f6e5d4c3b2a1...</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">html</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">attachments</span><span class="p">:</span>
+        <span class="n">html</span> <span class="o">+=</span> <span class="p">(</span>
+            <span class="s1">&#39;&lt;table style=&quot;font-family: serif; &#39;</span>
+            <span class="s1">&#39;margin-bottom: 20px;&#39;</span>
+            <span class="s1">&#39;border-spacing: 1rem 0;&#39;</span>
+            <span class="s1">&#39;text-align: left;&quot;&gt;&#39;</span>
+        <span class="p">)</span>
+        <span class="n">html</span> <span class="o">+=</span> <span class="p">(</span>
+            <span class="s1">&#39;&lt;thead&gt;&lt;tr&gt;&lt;th colspan=&quot;3&quot;&gt;Attachments:&lt;/th&gt;&lt;/tr&gt;&#39;</span>
+            <span class="s1">&#39;&lt;tr&gt;&lt;th scope=&quot;col&quot;&gt;Name&lt;/th&gt;&#39;</span>
+            <span class="s1">&#39;&lt;th scope=&quot;col&quot;&gt;Size&lt;/th&gt;&#39;</span>
+            <span class="s1">&#39;&lt;th scope=&quot;col&quot;&gt;MD5sum&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&#39;</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">at</span> <span class="ow">in</span> <span class="n">attachments</span><span class="p">:</span>
+            <span class="n">html</span> <span class="o">+=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;&lt;tr&gt;&lt;td&gt;</span><span class="si">{</span><span class="n">at</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&lt;/td&gt;&lt;td&gt;</span><span class="si">{</span><span class="n">size</span><span class="p">(</span><span class="n">at</span><span class="o">.</span><span class="n">size</span><span class="p">)</span><span class="si">}</span><span class="s1">&lt;/td&gt;&#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;&lt;td&gt;</span><span class="si">{</span><span class="n">at</span><span class="o">.</span><span class="n">md5sum</span><span class="si">}</span><span class="s1">&lt;/td&gt;&lt;/tr&gt;&#39;</span>
+            <span class="p">)</span>
+        <span class="n">html</span> <span class="o">+=</span> <span class="s1">&#39;&lt;/table&gt;&#39;</span>
+
+    <span class="k">return</span> <span class="n">html</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_get_cte</span><span class="p">(</span><span class="n">message</span><span class="p">:</span> <span class="n">email</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">Message</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the message part Content-Transfer-Encoding</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        message: (email.message.Message): Email message part to return the</span>
+<span class="sd">            Content-Transer-Encoding for</span>
+
+<span class="sd">    Returns (str): the email message part CTE</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cte</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;content-transfer-encoding&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cte</span><span class="o">.</span><span class="n">cte</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">cte</span><span class="p">,</span> <span class="s1">&#39;cte&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">cte</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_generate_html</span><span class="p">(</span>
+    <span class="n">msg</span><span class="p">:</span> <span class="n">email</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">Message</span><span class="p">,</span> <span class="n">logging_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">_Header</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates HTML for a given message.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        message: (email.message.Message): Email message to generate HTML for.</span>
+<span class="sd">        logging_id (str | None): Optional identifier for logging context.</span>
+
+<span class="sd">    Returns (str): The email as HTML</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">email_header</span> <span class="o">=</span> <span class="n">_Header</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">logging_id</span><span class="p">)</span>
+    <span class="n">html_content</span><span class="p">,</span> <span class="n">attachments</span> <span class="o">=</span> <span class="n">_walk_eml</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">logging_id</span><span class="p">)</span>
+    <span class="n">attachment_list</span> <span class="o">=</span> <span class="n">_generate_attachment_list</span><span class="p">(</span><span class="n">attachments</span><span class="p">)</span>
+    <span class="c1"># Add UTF-8 meta tag and email header if not present</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">html_content</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">html_content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">&lt;meta charset=&quot;UTF-8&quot;&gt;</span>
+<span class="s2">&lt;meta http-equiv=&quot;Content-Type&quot; content=&quot;text/html; charset=UTF-8&quot;&gt;</span>
+<span class="si">{</span><span class="n">email_header</span><span class="o">.</span><span class="n">html</span><span class="si">}</span>
+<span class="si">{</span><span class="n">attachment_list</span><span class="si">}</span>
+<span class="s2">&lt;hr&gt;</span>
+<span class="si">{</span><span class="n">html_content</span><span class="si">}</span>
+<span class="s2">&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">email_header</span><span class="p">,</span> <span class="n">html_content</span>
+
+
+<div class="viewcode-block" id="process_eml">
+<a class="viewcode-back" href="../../api.html#eml2pdf.process_eml">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_eml</span><span class="p">(</span>
+    <span class="n">eml_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">output_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">page</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;a4&#39;</span><span class="p">,</span>
+    <span class="n">debug_html</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">unsafe</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">logging_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Process a single EML file and generate a PDF.</span>
+
+<span class="sd">    1. Parse EML file with email.message_from_binary_file() (fallback to</span>
+<span class="sd">        message_from_file())</span>
+<span class="sd">    2. Extract header (from/to/subject/date)</span>
+<span class="sd">    3. Walk message parts to extract content and attachments</span>
+<span class="sd">    4. Generate attachment list table</span>
+<span class="sd">    5. Assemble complete HTML with UTF-8 meta tags, header, attachments, and</span>
+<span class="sd">       body</span>
+<span class="sd">    6. Generate output filename from date and subject</span>
+<span class="sd">    7. Convert to PDF (with sanitization unless unsafe=True)</span>
+
+<span class="sd">    HTML Structure:</span>
+<span class="sd">        - UTF-8 meta tags</span>
+<span class="sd">        - Email header table (from/to/date/subject)</span>
+<span class="sd">        - Attachment list table</span>
+<span class="sd">        - Horizontal rule separator</span>
+<span class="sd">        - Email body content with embedded images</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        eml_path (Path): Path to the EML file to process.</span>
+<span class="sd">        output_path (Path): Path where PDF will be saved. If this is a dir then</span>
+<span class="sd">          an output filename will be derived from the email content. If this</span>
+<span class="sd">          is a file then output_path is taken as filename.</span>
+<span class="sd">        page (str, optional): PDF page size. Defaults to &#39;a4&#39;.</span>
+<span class="sd">        debug_html (bool, optional): Save HTML to disk for debugging.</span>
+<span class="sd">          Defaults to False.</span>
+<span class="sd">        unsafe (bool, optional): Skip HTML sanitization. Defaults to False.</span>
+<span class="sd">        logging_id (str | None, optional): Identifier for logging context.</span>
+<span class="sd">          Defaults to the eml_path name.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        If no text content is found, the file is skipped and a warning is</span>
+<span class="sd">        logged.</span>
+<span class="sd">        Output filename format: {date}-{subject}.pdf</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Use filename as default logging_id if not provided</span>
+    <span class="n">effective_logging_id</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">logging_id</span> <span class="k">if</span> <span class="n">logging_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">eml_path</span><span class="o">.</span><span class="n">name</span>
+    <span class="p">)</span>
+    <span class="n">prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;[</span><span class="si">{</span><span class="n">effective_logging_id</span><span class="si">}</span><span class="s1">] &#39;</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s1">Processing </span><span class="si">{</span><span class="n">eml_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># Open and parse the .eml file</span>
+    <span class="c1"># Try binary mode first to handle various encodings (ISO-8859-1, etc.)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">eml_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">email</span><span class="o">.</span><span class="n">message_from_binary_file</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">UnicodeDecodeError</span><span class="p">:</span>
+        <span class="c1"># Fall back to text mode for UTF-8 encoded files</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">eml_path</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="n">email</span><span class="o">.</span><span class="n">message_from_file</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="n">email_header</span><span class="p">,</span> <span class="n">html_content</span> <span class="o">=</span> <span class="n">_generate_html</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">effective_logging_id</span><span class="p">)</span>
+
+    <span class="c1"># Convert to PDF if HTML content is found</span>
+    <span class="k">if</span> <span class="n">html_content</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">output_path</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+            <span class="n">output_path</span> <span class="o">=</span> <span class="n">_get_output_base_path</span><span class="p">(</span>
+                <span class="n">email_header</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">email_header</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span> <span class="n">output_path</span>
+            <span class="p">)</span>
+        <span class="n">generate_pdf</span><span class="p">(</span>
+            <span class="n">html_content</span><span class="o">=</span><span class="n">html_content</span><span class="p">,</span>
+            <span class="n">outfile_path</span><span class="o">=</span><span class="n">output_path</span><span class="p">,</span>
+            <span class="n">debug_html</span><span class="o">=</span><span class="n">debug_html</span><span class="p">,</span>
+            <span class="n">page</span><span class="o">=</span><span class="n">page</span><span class="p">,</span>
+            <span class="n">unsafe</span><span class="o">=</span><span class="n">unsafe</span><span class="p">,</span>
+            <span class="n">logging_id</span><span class="o">=</span><span class="n">effective_logging_id</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s1">No plain text or HTML content found &#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;in </span><span class="si">{</span><span class="n">eml_path</span><span class="si">}</span><span class="s1">. Skipping...&#39;</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="process_eml_bytes">
+<a class="viewcode-back" href="../../api.html#eml2pdf.process_eml_bytes">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_eml_bytes</span><span class="p">(</span>
+    <span class="n">contents</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
+    <span class="n">page</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;a4&#39;</span><span class="p">,</span>
+    <span class="n">debug_html</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">unsafe</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">logging_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates a PDF from an EML file in memory.</span>
+
+<span class="sd">    Same as process_eml() but accepts and returns bytes instead of files.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        contents (bytes): The bytes of the eml file</span>
+<span class="sd">        page (str, optional): PDF page size. Defaults to &#39;a4&#39;.</span>
+<span class="sd">        debug_html (bool, optional): Save HTML to disk for debugging.</span>
+<span class="sd">          Defaults to False.</span>
+<span class="sd">        unsafe (bool, optional): Skip HTML sanitization. Defaults to False.</span>
+<span class="sd">        logging_id (str | None, optional): Identifier for logging context.</span>
+
+<span class="sd">    Returns (bytes): The bytes of a valid PDF file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">email</span><span class="o">.</span><span class="n">message_from_bytes</span><span class="p">(</span><span class="n">contents</span><span class="p">)</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">html_content</span> <span class="o">=</span> <span class="n">_generate_html</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">logging_id</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">generate_pdf</span><span class="p">(</span>
+        <span class="n">html_content</span><span class="o">=</span><span class="n">html_content</span><span class="p">,</span>
+        <span class="n">page</span><span class="o">=</span><span class="n">page</span><span class="p">,</span>
+        <span class="n">unsafe</span><span class="o">=</span><span class="n">unsafe</span><span class="p">,</span>
+        <span class="n">logging_id</span><span class="o">=</span><span class="n">logging_id</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="process_all_emls_in_dir">
+<a class="viewcode-back" href="../../api.html#eml2pdf.process_all_emls_in_dir">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_all_emls_in_dir</span><span class="p">(</span>
+    <span class="n">input_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">number_of_procs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">debug_html</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">page</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;a4&#39;</span><span class="p">,</span>
+    <span class="n">unsafe</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Process all EML files in a directory to PDFs.</span>
+
+<span class="sd">    Main entry point for batch processing of email files. Handles directory</span>
+<span class="sd">    creation, file discovery, and parallel or sequential processing.</span>
+
+<span class="sd">    Multiprocessing Conditions:</span>
+<span class="sd">        Parallel processing is used when ALL of these are true:</span>
+<span class="sd">        - number_of_procs &gt; 1</span>
+<span class="sd">        - logger level is not DEBUG</span>
+
+<span class="sd">    Reason for Limitations:</span>
+<span class="sd">        Debug logging outputs long messages that are not multiprocess-safe</span>
+<span class="sd">        and would become garbled when multiple processes write simultaneously.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_dir (Path): Directory containing EML files to process.</span>
+<span class="sd">        output_dir (Path): Directory where PDFs will be saved (created if</span>
+<span class="sd">            needed).</span>
+<span class="sd">        number_of_procs (int): Number of parallel processes. Use 1 for</span>
+<span class="sd">                               sequential. Defaults to 1.</span>
+<span class="sd">        debug_html (bool): Save intermediate HTML files for debugging. Defaults</span>
+<span class="sd">                           to False.</span>
+<span class="sd">        page (str): PDF page size (e.g., &#39;a4&#39;, &#39;letter&#39;). Defaults to &#39;a4&#39;</span>
+<span class="sd">        unsafe (bool): Skip HTML sanitization (use only with trusted sources).</span>
+<span class="sd">                       Defaults to False.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Creates output_dir with parents if it doesn&#39;t exist.</span>
+<span class="sd">        Exits with code 1 if output directory cannot be created.</span>
+<span class="sd">        Uses Python&#39;s multiprocessing.Pool for parallel processing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Create output directory if it doesn&#39;t exist</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">output_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">PermissionError</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Could not create output directory </span><span class="si">{</span><span class="n">output_dir</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Process all .eml files in input directory</span>
+    <span class="n">eml_file_paths</span> <span class="o">=</span> <span class="n">_get_filepaths</span><span class="p">(</span><span class="n">input_dir</span><span class="p">)</span>
+    <span class="c1"># Don&#39;t use multiprocessing if n is 1 or we output debug logging.</span>
+    <span class="c1"># We output a lot of long debug messages. That&#39;s not multiprocess safe.</span>
+    <span class="c1"># Messages would get garbled.</span>
+    <span class="k">if</span> <span class="n">number_of_procs</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">logger</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">ep</span> <span class="ow">in</span> <span class="n">eml_file_paths</span><span class="p">:</span>
+            <span class="n">process_eml</span><span class="p">(</span><span class="n">ep</span><span class="p">,</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">),</span> <span class="n">page</span><span class="p">,</span> <span class="n">debug_html</span><span class="p">,</span> <span class="n">unsafe</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">p_args</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="n">ep</span><span class="p">,</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">),</span> <span class="n">page</span><span class="p">,</span> <span class="n">debug_html</span><span class="p">,</span> <span class="n">unsafe</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">ep</span> <span class="ow">in</span> <span class="n">eml_file_paths</span>
+        <span class="p">)</span>
+        <span class="k">with</span> <span class="n">Pool</span><span class="p">(</span><span class="n">number_of_procs</span><span class="p">)</span> <span class="k">as</span> <span class="n">p</span><span class="p">:</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">process_eml</span><span class="p">,</span> <span class="n">p_args</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;All .eml files processed.&#39;</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_set_log_levels</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Tune down Weasyprint warnings.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">logger</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="n">logging</span><span class="o">.</span><span class="n">NOTSET</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
+
+    <span class="n">wp_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;weasyprint&#39;</span><span class="p">)</span>
+    <span class="n">ft_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;fontTools&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">logger</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">:</span>
+        <span class="n">quiet_loglevel</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span>
+    <span class="k">elif</span> <span class="n">logger</span><span class="o">.</span><span class="n">level</span> <span class="ow">in</span> <span class="p">[</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">]:</span>
+        <span class="n">quiet_loglevel</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span>
+    <span class="k">elif</span> <span class="n">logger</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">:</span>
+        <span class="n">quiet_loglevel</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span> <span class="o">+</span> <span class="mi">10</span>  <span class="c1"># This means wp will shut up!</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;Logger contains an unexpected level: </span><span class="si">{</span><span class="n">logger</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">lgr</span> <span class="ow">in</span> <span class="p">[</span><span class="n">wp_logger</span><span class="p">,</span> <span class="n">ft_logger</span><span class="p">]:</span>
+        <span class="n">lgr</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">quiet_loglevel</span><span class="p">)</span>
+
+
+<span class="nd">@overload</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_pdf</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">html_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">outfile_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">debug_html</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">page</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;a4&#39;</span><span class="p">,</span>
+    <span class="n">unsafe</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">logging_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+
+<span class="nd">@overload</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_pdf</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">html_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">page</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;a4&#39;</span><span class="p">,</span>
+    <span class="n">unsafe</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">logging_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="generate_pdf">
+<a class="viewcode-back" href="../../api.html#eml2pdf.generate_pdf">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">generate_pdf</span><span class="p">(</span>
+    <span class="n">html_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">outfile_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">debug_html</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">page</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;a4&#39;</span><span class="p">,</span>
+    <span class="n">unsafe</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">logging_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert HTML content to PDF with optional sanitization.</span>
+
+<span class="sd">    Generates a PDF from HTML content using WeasyPrint. By default, sanitizes</span>
+<span class="sd">    HTML to remove security and privacy risks before rendering.</span>
+
+<span class="sd">    Processing Steps:</span>
+<span class="sd">        1. Sanitize HTML (unless unsafe=True)</span>
+<span class="sd">        2. Optionally save HTML to disk for debugging</span>
+<span class="sd">        3. Parse HTML with WeasyPrint</span>
+<span class="sd">        4. Apply page size and margins via CSS</span>
+<span class="sd">        5. Get exclusive output file handle (prevents conflicts)</span>
+<span class="sd">        6. Write PDF to file</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        html_content (str): The HTML content to convert to PDF.</span>
+<span class="sd">        outfile_path (Path): Desired output file path.</span>
+<span class="sd">        debug_html (bool, optional): If True, saves HTML to {outfile}.html for</span>
+<span class="sd">            debugging. Defaults to False.</span>
+<span class="sd">        page (str, optional): Page size for PDF (e.g., &#39;a4&#39;, &#39;letter&#39;).</span>
+<span class="sd">            Defaults to &#39;a4&#39;.</span>
+<span class="sd">        unsafe (bool, optional): If True, bypasses HTML sanitization. Only use</span>
+<span class="sd">            when you completely trust the source. Defaults to False.</span>
+<span class="sd">        logging_id (str | None, optional): Identifier for logging context.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        HTML sanitization is performed by security.sanitize_html() unless</span>
+<span class="sd">        unsafe=True. See security.md for details on what is filtered.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        Exception: Logs error if PDF generation fails, but does not re-raise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Build logging prefix</span>
+    <span class="n">prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;[</span><span class="si">{</span><span class="n">logging_id</span><span class="si">}</span><span class="s1">] &#39;</span> <span class="k">if</span> <span class="n">logging_id</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+
+    <span class="n">_set_log_levels</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">unsafe</span><span class="p">:</span>
+        <span class="n">html_content</span> <span class="o">=</span> <span class="n">security</span><span class="o">.</span><span class="n">sanitize_html</span><span class="p">(</span><span class="n">html_content</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">debug_html</span> <span class="ow">and</span> <span class="n">outfile_path</span><span class="p">:</span>
+            <span class="n">html_file</span> <span class="o">=</span> <span class="n">outfile_path</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="n">Path</span><span class="p">(</span><span class="n">outfile_path</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.html&#39;</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">html_file</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">of</span><span class="p">:</span>
+                <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">html_content</span><span class="p">)</span>
+        <span class="n">html</span> <span class="o">=</span> <span class="n">HTML</span><span class="p">(</span><span class="n">string</span><span class="o">=</span><span class="n">html_content</span><span class="p">)</span>
+        <span class="n">css</span> <span class="o">=</span> <span class="n">CSS</span><span class="p">(</span><span class="n">string</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;@page </span><span class="se">{{</span><span class="s1"> size: </span><span class="si">{</span><span class="n">page</span><span class="si">}</span><span class="s1">; margin: 1cm </span><span class="se">}}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">outfile_path</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">_get_exclusive_outfile</span><span class="p">(</span><span class="n">outfile_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">outfile</span><span class="p">:</span>
+                <span class="n">html</span><span class="o">.</span><span class="n">write_pdf</span><span class="p">(</span>
+                    <span class="n">target</span><span class="o">=</span><span class="n">outfile</span><span class="p">,</span>
+                    <span class="n">presentational_hints</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">stylesheets</span><span class="o">=</span><span class="p">[</span><span class="n">css</span><span class="p">],</span>
+                <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s1">Converted to PDF successfully.&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">write_pdf</span><span class="p">(</span>
+                <span class="n">target</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">presentational_hints</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stylesheets</span><span class="o">=</span><span class="p">[</span><span class="n">css</span><span class="p">]</span>
+            <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s1">Failed to convert: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="header_to_html">
+<a class="viewcode-back" href="../../api.html#eml2pdf.header_to_html">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">header_to_html</span><span class="p">(</span><span class="n">header_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode and HTML-escape an email header field.</span>
+
+<span class="sd">    Processes encoded email headers by decoding multi-part headers and</span>
+<span class="sd">    concatenating them into a single HTML-safe string.</span>
+
+<span class="sd">    Decoding Strategy:</span>
+<span class="sd">        1. Uses email.header.decode_header() to parse encoded headers</span>
+<span class="sd">        2. Handles multi-part headers by concatenating them</span>
+<span class="sd">        3. For string parts, uses them directly</span>
+<span class="sd">        4. For byte parts, decodes with specified encoding (defaults to</span>
+<span class="sd">            &#39;ascii&#39; if None)</span>
+<span class="sd">        5. HTML-escapes the final result to prevent XSS</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        header_str (str): The raw email header string (may be RFC 2047</span>
+<span class="sd">            encoded).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: Decoded and HTML-escaped header string safe for inclusion in HTML.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; header_to_html(&#39;=?utf-8?B?SGVsbG8gV29ybGQ=?=&#39;)</span>
+<span class="sd">        &#39;Hello World&#39;</span>
+<span class="sd">        &gt;&gt;&gt; header_to_html(&#39;Test &lt;tag&gt;&#39;)</span>
+<span class="sd">        &#39;Test &amp;lt;tag&amp;gt;&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">headers</span> <span class="o">=</span> <span class="n">email</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">decode_header</span><span class="p">(</span><span class="n">header_str</span><span class="p">)</span>
+    <span class="n">headers_as_string</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+    <span class="c1"># decoded headers can have multiple parts. Concat them.</span>
+    <span class="k">for</span> <span class="n">head</span> <span class="ow">in</span> <span class="n">headers</span><span class="p">:</span>
+        <span class="c1"># If a header contains a str, don&#39;t try to decode.</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">head</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">headers_as_string</span> <span class="o">+=</span> <span class="n">head</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># If a header is ascii encoded then head[1] is None</span>
+            <span class="c1"># If head[1] is not None it should be a string with the encoding.</span>
+            <span class="n">enc</span> <span class="o">=</span> <span class="s1">&#39;ascii&#39;</span> <span class="k">if</span> <span class="n">head</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">head</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">headers_as_string</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="n">head</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">enc</span><span class="p">)</span>
+    <span class="c1"># eml headers can contain &amp;, &lt;, &gt;</span>
+    <span class="k">return</span> <span class="n">escape</span><span class="p">(</span><span class="n">headers_as_string</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Pieter Lenaerts.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

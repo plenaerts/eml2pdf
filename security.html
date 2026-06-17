@@ -1,0 +1,364 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Security Features &mdash; eml2pdf  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Development Guide" href="development.html" />
+    <link rel="prev" title="Installation instructions" href="install.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            eml2pdf
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">Overview, usage, installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation instructions</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Security Features</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#html-sanitization">HTML Sanitization</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#protected-against">Protected Against</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#script-execution-and-active-content">1. Script Execution and Active Content</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-exfiltration-via-forms">2. Data Exfiltration via Forms</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#privacy-leaks-via-remote-resources">3. Privacy Leaks via Remote Resources</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#cross-site-scripting-xss-vectors">4. Cross-Site Scripting (XSS) Vectors</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#metadata-and-resource-loading">5. Metadata and Resource Loading</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#default-secure-mode">Default (Secure) Mode</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#via-command-line">Via command line</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#via-api">Via API</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#unsafe-mode">Unsafe Mode</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#via-command-line-unsafe-mode">Via command line (Unsafe Mode)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#via-api-unsafe-mode">Via API (Unsafe Mode)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#some-technical-details">Some technical details</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sanitization-process">Sanitization process</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#integration-with-pdf-generation">Integration with PDF generation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#limitations">Limitations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#recommendations">Recommendations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#related-files">Related files</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="development.html">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="documentation.html">Documentation Setup</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">eml2pdf</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Security Features</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/security.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="security-features">
+<h1>Security Features<a class="headerlink" href="#security-features" title="Link to this heading"></a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>eml2pdf includes security features to protect users from potentially malicious
+content embedded in email messages. These features are implemented in
+<code class="docutils literal notranslate"><span class="pre">eml2pdf/security.py</span></code> and are enabled by default during PDF generation.</p>
+</section>
+<section id="html-sanitization">
+<h2>HTML Sanitization<a class="headerlink" href="#html-sanitization" title="Link to this heading"></a></h2>
+<p>The primary security mechanism is the <code class="docutils literal notranslate"><span class="pre">sanitize_html()</span></code> function in
+eml2pdf/security.py, which removes or neutralizes potentially dangerous
+HTML elements and attributes before PDF generation.</p>
+<section id="protected-against">
+<h3>Protected Against<a class="headerlink" href="#protected-against" title="Link to this heading"></a></h3>
+<section id="script-execution-and-active-content">
+<h4>1. Script Execution and Active Content<a class="headerlink" href="#script-execution-and-active-content" title="Link to this heading"></a></h4>
+<p>The sanitizer removes tags that can execute code or load external active content:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;script&gt;</span></code> - JavaScript execution</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;iframe&gt;</span></code> - Embedded frames that can load external content</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;object&gt;</span></code> - Embedded objects (Flash, Java applets, etc.)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;embed&gt;</span></code> - Alternative embedding mechanism</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;video&gt;</span></code> - Video elements with potential codec vulnerabilities</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;audio&gt;</span></code> - Audio elements with potential codec vulnerabilities</p></li>
+</ul>
+</section>
+<section id="data-exfiltration-via-forms">
+<h4>2. Data Exfiltration via Forms<a class="headerlink" href="#data-exfiltration-via-forms" title="Link to this heading"></a></h4>
+<p>Forms can be used to send data to external servers:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;form&gt;</span></code> - Form elements that could submit data</p></li>
+</ul>
+</section>
+<section id="privacy-leaks-via-remote-resources">
+<h4>3. Privacy Leaks via Remote Resources<a class="headerlink" href="#privacy-leaks-via-remote-resources" title="Link to this heading"></a></h4>
+<p>Remote resources can be used to track email opens and gather information:</p>
+<section id="remote-images">
+<h5>Remote Images<a class="headerlink" href="#remote-images" title="Link to this heading"></a></h5>
+<ul class="simple">
+<li><p>Images with <code class="docutils literal notranslate"><span class="pre">src</span></code> attributes starting with <code class="docutils literal notranslate"><span class="pre">http://</span></code> or <code class="docutils literal notranslate"><span class="pre">https://</span></code> are removed</p></li>
+<li><p>This prevents tracking pixels and web beacons</p></li>
+<li><p>Only embedded images (using data URIs or CID references) are allowed</p></li>
+</ul>
+</section>
+<section id="css-url-references">
+<h5>CSS URL References<a class="headerlink" href="#css-url-references" title="Link to this heading"></a></h5>
+<ul class="simple">
+<li><p>Inline <code class="docutils literal notranslate"><span class="pre">style</span></code> attributes containing <code class="docutils literal notranslate"><span class="pre">url()</span></code> functions are cleared</p></li>
+<li><p>Prevents loading of remote stylesheets, fonts, or background images</p></li>
+</ul>
+</section>
+<section id="external-links">
+<h5>External Links<a class="headerlink" href="#external-links" title="Link to this heading"></a></h5>
+<ul class="simple">
+<li><p>Links with <code class="docutils literal notranslate"><span class="pre">href</span></code> attributes starting with <code class="docutils literal notranslate"><span class="pre">http://</span></code> or <code class="docutils literal notranslate"><span class="pre">https://</span></code> are
+replaced with <code class="docutils literal notranslate"><span class="pre">#</span></code></p></li>
+<li><p>Prevents clickable links that could lead to malicious sites</p></li>
+<li><p>Note: This doesn’t remove the link text, just neutralizes the destination</p></li>
+</ul>
+</section>
+</section>
+<section id="cross-site-scripting-xss-vectors">
+<h4>4. Cross-Site Scripting (XSS) Vectors<a class="headerlink" href="#cross-site-scripting-xss-vectors" title="Link to this heading"></a></h4>
+<p>Event handlers and data attributes can be exploited for XSS attacks:</p>
+<section id="event-handlers">
+<h5>Event Handlers<a class="headerlink" href="#event-handlers" title="Link to this heading"></a></h5>
+<ul class="simple">
+<li><p>All attributes starting with <code class="docutils literal notranslate"><span class="pre">on</span></code> are removed (e.g., <code class="docutils literal notranslate"><span class="pre">onclick</span></code>, <code class="docutils literal notranslate"><span class="pre">onload</span></code>, <code class="docutils literal notranslate"><span class="pre">onerror</span></code>)</p></li>
+<li><p>Prevents JavaScript execution via event handlers</p></li>
+</ul>
+</section>
+<section id="data-attributes">
+<h5>Data Attributes<a class="headerlink" href="#data-attributes" title="Link to this heading"></a></h5>
+<ul class="simple">
+<li><p>All attributes starting with <code class="docutils literal notranslate"><span class="pre">data-</span></code> are removed</p></li>
+<li><p>Prevents storage of potentially malicious data for later exploitation</p></li>
+</ul>
+</section>
+</section>
+<section id="metadata-and-resource-loading">
+<h4>5. Metadata and Resource Loading<a class="headerlink" href="#metadata-and-resource-loading" title="Link to this heading"></a></h4>
+<p>Additional tags that can affect page behavior or load external resources:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;meta&gt;</span></code> - Meta tags that could redirect or refresh</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;link&gt;</span></code> - Linked resources like stylesheets, icons, or prefetch hints</p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<section id="default-secure-mode">
+<h3>Default (Secure) Mode<a class="headerlink" href="#default-secure-mode" title="Link to this heading"></a></h3>
+<p>By default, all HTML content is sanitized before PDF generation:</p>
+<section id="via-command-line">
+<h4>Via command line<a class="headerlink" href="#via-command-line" title="Link to this heading"></a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>eml2pdf<span class="w"> </span>convert_dir<span class="w"> </span>input_dir<span class="w"> </span>output_dir
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>eml2pdf<span class="w"> </span>convert_file<span class="w"> </span>input_file<span class="w"> </span>output_file
+</pre></div>
+</div>
+</section>
+<section id="via-api">
+<h4>Via API<a class="headerlink" href="#via-api" title="Link to this heading"></a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">eml2pdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">process_eml</span><span class="p">,</span> <span class="n">process_all_emls_in_dir</span><span class="p">,</span> <span class="n">process_eml_bytes</span>
+
+<span class="c1"># Sanitization is enabled by default (unsafe=False)</span>
+<span class="n">process_eml</span><span class="p">(</span><span class="n">eml_path</span><span class="p">,</span> <span class="n">output_path</span><span class="p">)</span>
+
+<span class="c1"># Or for a whole dir</span>
+<span class="n">process_all_emls_in_dir</span><span class="p">(</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">)</span>
+
+<span class="c1"># Or for bytes in memory</span>
+<span class="n">pdf_bytes</span> <span class="o">=</span> <span class="n">process_eml_bytes</span><span class="p">(</span><span class="n">eml_bytes</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="unsafe-mode">
+<h3>Unsafe Mode<a class="headerlink" href="#unsafe-mode" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">--unsafe</span></code> flag (or <code class="docutils literal notranslate"><span class="pre">unsafe=True</span></code> parameter in the API) disables HTML
+sanitization. This mode should only be used when:</p>
+<ul class="simple">
+<li><p>You completely trust the source of the EML files</p></li>
+<li><p>You understand the security risks involved</p></li>
+</ul>
+<p><strong>Warning again</strong>: Unsafe mode may expose sensitive user information through
+tracking pixels, external resources, and other privacy-invasive techniques.
+Consider running eml2pdf airgapped if you have reason to.</p>
+<section id="via-command-line-unsafe-mode">
+<h4>Via command line (Unsafe Mode)<a class="headerlink" href="#via-command-line-unsafe-mode" title="Link to this heading"></a></h4>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>eml2pdf<span class="w"> </span>convert_file<span class="w"> </span>input_file<span class="w"> </span>output_file<span class="w"> </span>--unsafe
+</pre></div>
+</div>
+</section>
+<section id="via-api-unsafe-mode">
+<h4>Via API (Unsafe Mode)<a class="headerlink" href="#via-api-unsafe-mode" title="Link to this heading"></a></h4>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">eml2pdf</span><span class="w"> </span><span class="kn">import</span> <span class="n">process_eml</span><span class="p">,</span> <span class="n">process_all_emls_in_dir</span><span class="p">,</span> <span class="n">process_eml_bytes</span>
+
+<span class="c1"># Disable sanitization for a single file</span>
+<span class="n">process_eml</span><span class="p">(</span><span class="n">eml_path</span><span class="p">,</span> <span class="n">output_path</span><span class="p">,</span> <span class="n">unsafe</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Disable sanitization for a directory</span>
+<span class="n">process_all_emls_in_dir</span><span class="p">(</span><span class="n">input_dir</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">unsafe</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Disable sanitization for bytes</span>
+<span class="n">pdf_bytes</span> <span class="o">=</span> <span class="n">process_eml_bytes</span><span class="p">(</span><span class="n">eml_bytes</span><span class="p">,</span> <span class="n">unsafe</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="some-technical-details">
+<h2>Some technical details<a class="headerlink" href="#some-technical-details" title="Link to this heading"></a></h2>
+<section id="sanitization-process">
+<h3>Sanitization process<a class="headerlink" href="#sanitization-process" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>HTML content is parsed using BeautifulSoup.</p></li>
+<li><p>Risky tags are found and completely removed with <code class="docutils literal notranslate"><span class="pre">.decompose()</span></code>.</p></li>
+<li><p>Attributes are selectively filtered or modified.</p></li>
+<li><p>The sanitized HTML is converted back to a string.</p></li>
+</ol>
+</section>
+<section id="integration-with-pdf-generation">
+<h3>Integration with PDF generation<a class="headerlink" href="#integration-with-pdf-generation" title="Link to this heading"></a></h3>
+<p>The sanitization occurs in the <code class="docutils literal notranslate"><span class="pre">generate_pdf()</span></code> function in eml2pdf/libeml2pdf.py:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">generate_pdf</span><span class="p">(</span>
+    <span class="n">html_content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">outfile_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">debug_html</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">page</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;a4&#39;</span><span class="p">,</span>
+    <span class="n">unsafe</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">logging_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert HTML to PDF.&quot;&quot;&quot;</span>
+
+    <span class="c1"># ... Some logging config first ...</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">unsafe</span><span class="p">:</span>
+        <span class="n">html_content</span> <span class="o">=</span> <span class="n">security</span><span class="o">.</span><span class="n">sanitize_html</span><span class="p">(</span><span class="n">html_content</span><span class="p">)</span>
+
+    <span class="c1"># ... PDF generation continues ...</span>
+</pre></div>
+</div>
+<p>This ensures that all HTML content is sanitized immediately before PDF
+rendering, regardless of the source. The <code class="docutils literal notranslate"><span class="pre">unsafe</span></code> parameter is passed through
+from the API functions (<code class="docutils literal notranslate"><span class="pre">process_eml</span></code>, <code class="docutils literal notranslate"><span class="pre">process_all_emls_in_dir</span></code>,
+<code class="docutils literal notranslate"><span class="pre">process_eml_bytes</span></code>) and the CLI <code class="docutils literal notranslate"><span class="pre">--unsafe</span></code> flag.</p>
+</section>
+</section>
+<section id="limitations">
+<h2>Limitations<a class="headerlink" href="#limitations" title="Link to this heading"></a></h2>
+<p>Above is a listing of what we do and you have access to the code. Judge for
+yourself and use on your discretion. Suggestions are more than welcome!</p>
+</section>
+<section id="recommendations">
+<h2>Recommendations<a class="headerlink" href="#recommendations" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p><strong>Keep Default Security</strong>: Always use the default secure mode unless you
+have a specific, trusted use case</p></li>
+<li><p><strong>Verify Sources</strong>: Only process EML files from trusted sources</p></li>
+<li><p><strong>Sandbox Processing</strong>: Consider running eml2pdf in a sandboxed environment
+when processing untrusted emails. With no Internet access.</p></li>
+<li><p><strong>Update Dependencies</strong>: Keep BeautifulSoup, WeasyPrint, and other
+dependencies up to date</p></li>
+</ol>
+</section>
+<section id="related-files">
+<h2>Related files<a class="headerlink" href="#related-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Security implementation: <code class="docutils literal notranslate"><span class="pre">eml2pdf/security.py</span></code></p></li>
+<li><p>Security integration: <code class="docutils literal notranslate"><span class="pre">eml2pdf/libeml2pdf.py</span></code></p></li>
+<li><p>CLI unsafe flag: <code class="docutils literal notranslate"><span class="pre">eml2pdf/eml2pdf.py</span></code></p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="install.html" class="btn btn-neutral float-left" title="Installation instructions" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="development.html" class="btn btn-neutral float-right" title="Development Guide" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Pieter Lenaerts.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

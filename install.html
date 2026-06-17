@@ -1,0 +1,161 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installation instructions &mdash; eml2pdf  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Security Features" href="security.html" />
+    <link rel="prev" title="eml2pdf" href="readme.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            eml2pdf
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="readme.html">Overview, usage, installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation instructions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installing-eml2pdf-using-pip">Installing eml2pdf using pip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installing-on-windows">Installing on Windows</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="security.html">Security Features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="development.html">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="documentation.html">Documentation Setup</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">eml2pdf</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installation instructions</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/install.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installation-instructions">
+<span id="install"></span><h1>Installation instructions<a class="headerlink" href="#installation-instructions" title="Link to this heading"></a></h1>
+<p>These instructions are meant to help you on your way if README.md still leaves
+some gaps.</p>
+<p><strong>If you are comfortable with a <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code> you should not read on ;-)</strong></p>
+<p>The preferred way to install packages on your system should be to use some form
+of package manager like APT for Debian GNU/Linux and derivatives or DNF for the
+Red Hat families, or the Windows Store on Microsoft Windows.</p>
+<p>eml2pdf is now maybe ready to be included in vetted package distributions
+such as the official Debian packages, but that will require some packaging work
+on top of <em>“just delivering a working script”</em>.</p>
+<p>This is why we currently release eml2pdf via PyPi, the Python Package Index.
+Next steps on the roadmap for eml2pdf will be to release packages and
+packaged executables next to PyPi and the source packages.</p>
+<section id="installing-eml2pdf-using-pip">
+<h2>Installing eml2pdf using pip<a class="headerlink" href="#installing-eml2pdf-using-pip" title="Link to this heading"></a></h2>
+<p>The easiest way to install eml2pdf is to install it via pip in a virtual
+environment. Pip is the Python package installer. You can find general info on
+<a class="reference external" href="https://docs.python.org/3/installing/index.html">the Python documentation pages on installing python modules</a>.</p>
+<p>On Linux systems you should have <strong>python3</strong> available. On Debian you would
+need to also install the python3-venv package to create and use virtual
+environments. On Windows you can <a class="reference external" href="https://apps.microsoft.com/search?query=python&amp;hl=nl-nl&amp;gl=BE">find Python on the Windows Store</a> and some help on
+<a class="reference external" href="https://learn.microsoft.com/en-us/windows/python/beginners">Python on Windows for beginners</a> from Microsoft.</p>
+<p>Next you should create a <strong>virtual environment</strong> using
+<code class="docutils literal notranslate"><span class="pre">python3</span> <span class="pre">-m</span> <span class="pre">venv</span> <span class="pre">&lt;path_to_your_venv_location&gt;</span></code>. Basically, virtual environments
+create a separate directory with an independent set of Python packages without
+polluting your Linux distribution packages. Refer to
+<a class="reference external" href="https://docs.python.org/3/library/venv.html#creating-virtual-environments">the Python documentation on virtual environments</a>
+for more info on virtual environments.</p>
+<p><strong>Activate your venv</strong> using <code class="docutils literal notranslate"><span class="pre">source</span> <span class="pre">&lt;venv&gt;/bin/activate</span></code> on Linux. Execute
+<code class="docutils literal notranslate"><span class="pre">&lt;venv&gt;\Scripts\Activate.ps1</span></code> in PowerShell on Windows if you are working on
+Windows with python3 in the same environment where you have Pango available.
+Refer to information below for Windows.</p>
+<p>In your shell, you can then issue <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">eml2pdf</span></code> to <strong>install the
+latest release</strong> from <a class="reference external" href="https://pypi.org">PyPI</a>, the Python Package Index, or
+<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&lt;path_to_source_dir&gt;</span></code>, which will install the git or other source
+pacakge you downloaded and unpacked in the virtual environment.</p>
+<p><strong>The eml2pdf command should now be available in your shell if you activate
+your venv.</strong></p>
+</section>
+<section id="installing-on-windows">
+<h2>Installing on Windows<a class="headerlink" href="#installing-on-windows" title="Link to this heading"></a></h2>
+<p>Using eml2pdf on Windows should be possible, but it’s not easy due to the
+Pango dependency. Refer to <a class="reference external" href="https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#windows">weasyprint install instructions for Windows</a>
+and then follow the pip installation steps above.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="readme.html" class="btn btn-neutral float-left" title="eml2pdf" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="security.html" class="btn btn-neutral float-right" title="Security Features" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Pieter Lenaerts.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
