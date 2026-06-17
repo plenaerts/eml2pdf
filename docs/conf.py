@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 project = 'eml2pdf'
-copyright = '2025, Pieter Lenaerts'
+copyright = '2026, Pieter Lenaerts'
 author = 'Pieter Lenaerts'
 
 # -- General configuration ---------------------------------------------------

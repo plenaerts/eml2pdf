@@ -264,6 +264,8 @@ https://github.com/klokie/).
   [bastidest](https://github.com/bastidest).
 - Fix bug - Header class not renamed correctly
   [benhxy](https://github.com/benhxy)
+- Support in-memory EML to PDF conversion -
+  [Levi Lesches](https://github.com/Levi-Lesches)
 
 If you want to work on eml2pdf, read [DEVELOPMENT.md on
 GitHub](https://github.com/plenaerts/eml2pdf/blob/main/DEVELOPMENT.md) or

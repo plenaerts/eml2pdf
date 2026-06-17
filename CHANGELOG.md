@@ -1,9 +1,13 @@
 # Eml2pdf changelog
 
-## v2.1.0 - Unreleased
+## v2.1.0 - 2026-06-17
 
-- Support in-memory EML to PDF conversion - contributed by [Levi Lesches](https://github.com/Levi-Lesches)
-- Added loglevel tests and fixes
+- Support in-memory EML to PDF conversion - contributed by
+  [Levi Lesches](https://github.com/Levi-Lesches)
+- Type safe
+- Added tests
+- Added linting and formatting checks and fixed issues.
+- Extended documentation
 
 ## v2.0.2 - 2026-04-10
 

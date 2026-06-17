@@ -1,7 +1,7 @@
 API Reference
 =============
 
-.. automodule:: eml2pdf.libeml2pdf
+.. automodule:: eml2pdf
    :members:
    :undoc-members:
    :show-inheritance:
