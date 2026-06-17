@@ -81,6 +81,8 @@ class TestProcessAllEmlsInDir(unittest.TestCase):
         # Check that PDF files were created
         eml_files = list(self.input_dir.glob('*.eml'))
         pdf_files = list(self.output_dir.glob('*.pdf'))
+        # TODO: Isn't the input dir empty, and doesn't that falsifie this
+        #       test?
         self.assertEqual(len(eml_files), len(pdf_files))
 
         # Check that all PDFs have content
@@ -131,6 +133,8 @@ class TestSetLogLevels(unittest.TestCase):
 
     def test_unexpected_level_raises(self):
         """Unexpected log level should raise ValueError."""
+        # TODO: Need to rework libeml2pdf._set_log_levels a bit
+        #       It doesn't take CRITICAL into account.
         self.logger.setLevel(logging.CRITICAL)
         with self.assertRaises(ValueError):
             libeml2pdf._set_log_levels()
@@ -204,6 +208,8 @@ class TestDecodeToStr(unittest.TestCase):
 
     def test_8bit_cte_workaround(self):
         """8bit CTE should use UTF-8 decoding workaround."""
+        # TODO: this would be more intereseting with a smiley :-)
+        #       Check for value added on top of test_unicode_escape_handling()
         result = libeml2pdf._decode_to_str(b'Hello World', 'utf-8', '8bit')
         self.assertEqual(result, 'Hello World')
 
@@ -216,6 +222,8 @@ class TestDecodeToStr(unittest.TestCase):
         """Non-bytes input should return empty string."""
         result = libeml2pdf._decode_to_str('not bytes', 'utf-8', '7bit')
         self.assertEqual(result, '')
+
+        # TODO: do we need the empty bytes with 8bit CTE or is that hogwash?
 
 
 class TestEmbedImgs(unittest.TestCase):
@@ -312,6 +320,8 @@ class TestGetOutputBasePath(unittest.TestCase):
 
     def test_without_date(self):
         """Output path should use 'nodate' prefix when date is None."""
+        # TODO We should maybe think about this. Do we want mails w/o dates?
+        #      We probably need a test w/o date and the exclusive filenames.
         result = libeml2pdf._get_output_base_path(
             None, 'Test', Path('/tmp/output')
         )
@@ -344,6 +354,7 @@ class TestGetOutputBasePath(unittest.TestCase):
 
     def test_empty_subject(self):
         """Empty subject should work."""
+        # TODO this test shows a dash at the end. That's not expected :-)
         result = libeml2pdf._get_output_base_path(
             datetime(2024, 1, 15), '', Path('/tmp/output')
         )
@@ -410,6 +421,7 @@ class TestEmailAndHeaderClasses(unittest.TestCase):
 
     def test_email_class_with_msg(self):
         """Test _Email class can be instantiated with a message."""
+        # TODO: add a test with weird encodings
         msg = EmailMessage()
         msg.set_content('Test content')
         msg['From'] = 'test@example.com'
@@ -448,6 +460,7 @@ class TestCreateAttachment(unittest.TestCase):
         self.assertEqual(result.name, 'test.txt')
         self.assertGreater(result.size, 0)
         self.assertIsNotNone(result.md5sum)
+        # TODO how about assertEquals on b'content' md5sum?
 
 
 class TestGenerateAttachmentList(unittest.TestCase):
