@@ -1,19 +1,18 @@
-name: CI
-# Source: https://github.com/ammaraskar/sphinx-action-test/blob/master/.github/workflows/default.yml
-on:
-  push:
-    branches:    
-      - main
+name: "Sphinx: Render docs"
+
+on: push
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
     steps:
-    - uses: actions/checkout@v1
-    # Standard drop-in approach that should work for most people.
-    - uses: ammaraskar/sphinx-action@master
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+    - name: Build HTML
+      uses: ammaraskar/sphinx-action@master
       with:
         docs-folder: "docs/"
         build-command: "sphinx-build -b html . _build"
@@ -21,10 +20,10 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: html-docs
-        path: docs/build/html/
+        path: docs/_build/html/
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
       if: github.ref == 'refs/heads/main'
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: docs/build/html
+        publish_dir: docs/_build/html
