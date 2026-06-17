@@ -8,7 +8,7 @@
 - Added tests
 - Added linting and formatting checks and fixed issues.
 - Extended documentation
-- Add docs to github pages with github action
+- Add docs to github pages with github actions
 
 ## v2.0.2 - 2026-04-10
 
