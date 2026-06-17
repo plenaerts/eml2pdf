@@ -1,12 +1,15 @@
 """Unit tests for public functions in libeml2pdf module."""
 
-import email
 import logging
 import shutil
 import tempfile
 import unittest
 from datetime import datetime
+from email.message import EmailMessage
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
 from pathlib import Path
+from unittest.mock import patch
 
 from eml2pdf import libeml2pdf
 
@@ -270,27 +273,27 @@ class TestGetCte(unittest.TestCase):
 
     def test_get_cte_standard(self):
         """Standard Content-Transfer-Encoding should be extracted."""
-        msg = email.message.EmailMessage()
+        msg = EmailMessage()
         msg['Content-Transfer-Encoding'] = 'base64'
         result = libeml2pdf._get_cte(msg)
         self.assertEqual(result, 'base64')
 
     def test_get_cte_missing(self):
         """Missing CTE should return empty string."""
-        msg = email.message.EmailMessage()
+        msg = EmailMessage()
         result = libeml2pdf._get_cte(msg)
         self.assertEqual(result, '')
 
     def test_get_cte_with_parameters(self):
         """CTE with parameters should be stripped."""
-        msg = email.message.EmailMessage()
+        msg = EmailMessage()
         msg['Content-Transfer-Encoding'] = '8bit'
         result = libeml2pdf._get_cte(msg)
         self.assertEqual(result, '8bit')
 
     def test_get_cte_case_insensitive(self):
         """CTE should be case-insensitive."""
-        msg = email.message.EmailMessage()
+        msg = EmailMessage()
         msg['Content-Transfer-Encoding'] = 'BASE64'
         result = libeml2pdf._get_cte(msg)
         self.assertEqual(result, 'base64')
@@ -400,3 +403,156 @@ class TestGetExclusiveOutfile(unittest.TestCase):
         outfile.close()
         self.assertTrue(output_path.exists())
         self.assertEqual(output_path.read_bytes(), b'test content')
+
+
+class TestEmailAndHeaderClasses(unittest.TestCase):
+    """Test internal class initialization."""
+
+    def test_email_class_with_msg(self):
+        """Test _Email class can be instantiated with a message."""
+        msg = EmailMessage()
+        msg.set_content('Test content')
+        msg['From'] = 'test@example.com'
+        msg['Subject'] = 'Test'
+
+        email_obj = libeml2pdf._Email(msg)
+        self.assertIsNotNone(email_obj.header)
+        self.assertIsNotNone(email_obj.html)
+        self.assertIsInstance(email_obj.attachments, list)
+
+    def test_header_unicode_error_handling(self):
+        """Test _Header handles UnicodeError in header decoding."""
+        msg = EmailMessage()
+        msg['From'] = 'test@example.com'
+        msg['Subject'] = 'Test'
+
+        with patch('eml2pdf.libeml2pdf.header_to_html') as mock_html:
+            mock_html.side_effect = UnicodeError('test', b'', 0, 1, 'error')
+            with self.assertLogs('eml2pdf.libeml2pdf', level='ERROR'):
+                header = libeml2pdf._Header(msg, 'test_id')
+                self.assertEqual(header.from_addr, 'Not decoded.')
+
+
+class TestCreateAttachment(unittest.TestCase):
+    """Test _create_attachment function."""
+
+    def test_none_filename_returns_none(self):
+        """Test that None filename returns None."""
+        result = libeml2pdf._create_attachment(None, b'content')
+        self.assertIsNone(result)
+
+    def test_valid_attachment_creation(self):
+        """Test attachment creation with valid filename."""
+        result = libeml2pdf._create_attachment('test.txt', b'content')
+        self.assertIsNotNone(result)
+        self.assertEqual(result.name, 'test.txt')
+        self.assertGreater(result.size, 0)
+        self.assertIsNotNone(result.md5sum)
+
+
+class TestGenerateAttachmentList(unittest.TestCase):
+    """Test _generate_attachment_list function."""
+
+    def test_with_attachments(self):
+        """Test HTML table generation with attachments."""
+        attachment1 = libeml2pdf._Attachment('file1.txt', 1024, 'abc123')
+        attachment2 = libeml2pdf._Attachment('file2.pdf', 2048, 'def456')
+
+        result = libeml2pdf._generate_attachment_list(
+            [attachment1, attachment2]
+        )
+
+        self.assertIn('<table', result)
+        self.assertIn('file1.txt', result)
+        self.assertIn('file2.pdf', result)
+        self.assertIn('abc123', result)
+        self.assertIn('def456', result)
+        self.assertIn('Attachments:', result)
+
+    def test_empty_list(self):
+        """Test empty list returns empty string."""
+        result = libeml2pdf._generate_attachment_list([])
+        self.assertEqual(result, '')
+
+
+class TestProcessEmlErrorHandling(unittest.TestCase):
+    """Test process_eml error handling."""
+
+    def setUp(self):
+        self.test_dir = Path(tempfile.mkdtemp())
+
+    def tearDown(self):
+        shutil.rmtree(self.test_dir, ignore_errors=True)
+
+    def test_unicode_decode_error_fallback(self):
+        """Test UnicodeDecodeError triggers UTF-8 fallback."""
+        eml_content = b'Content-Type: text/plain\n\nHello World'
+        eml_path = self.test_dir / 'test.eml'
+        eml_path.write_bytes(eml_content)
+
+        output_path = self.test_dir / 'output.pdf'
+
+        libeml2pdf.process_eml(eml_path, output_path)
+        self.assertTrue(output_path.exists())
+
+    def test_process_eml_creates_pdf_from_eml_with_attachments_only(self):
+        """Test PDF created even for EML with only attachments."""
+        msg = MIMEMultipart()
+        msg['From'] = 'test@example.com'
+        msg['Subject'] = 'Test'
+        part = MIMEApplication(b'attachment content')
+        part.add_header(
+            'Content-Disposition', 'attachment', filename='test.txt'
+        )
+        msg.attach(part)
+
+        eml_path = self.test_dir / 'no_content.eml'
+        with open(eml_path, 'wb') as f:
+            f.write(msg.as_bytes())
+
+        output_path = self.test_dir / 'output.pdf'
+
+        # PDF should be created from headers even with no text/html content
+        libeml2pdf.process_eml(eml_path, output_path)
+        self.assertTrue(output_path.exists())
+
+
+class TestGeneratePdfAdvanced(unittest.TestCase):
+    """Test generate_pdf advanced scenarios."""
+
+    def setUp(self):
+        self.test_dir = Path(tempfile.mkdtemp())
+
+    def tearDown(self):
+        shutil.rmtree(self.test_dir, ignore_errors=True)
+
+    def test_generate_pdf_returns_none_for_file(self):
+        """Test that generate_pdf returns None when writing to file."""
+        output_path = self.test_dir / 'test.pdf'
+        result = libeml2pdf.generate_pdf(
+            html_content='<html><body><p>Test</p></body></html>',
+            outfile_path=output_path,
+        )
+        self.assertIsNone(result)
+        self.assertTrue(output_path.exists())
+
+    def test_generate_pdf_returns_bytes_without_file(self):
+        """Test that generate_pdf returns bytes when no outfile_path."""
+        result = libeml2pdf.generate_pdf(
+            html_content='<html><body><p>Test</p></body></html>'
+        )
+        self.assertIsInstance(result, bytes)
+        self.assertGreater(len(result), 0)
+
+    def test_generate_pdf_debug_html_creates_html_file(self):
+        """Test that debug_html=True creates HTML file."""
+        output_path = self.test_dir / 'test.pdf'
+        libeml2pdf.generate_pdf(
+            html_content='<html><body><p>Test</p></body></html>',
+            outfile_path=output_path,
+            debug_html=True,
+        )
+
+        html_path = self.test_dir / 'test.pdf.html'
+        self.assertTrue(html_path.exists())
+        self.assertIn('<html>', html_path.read_text())
